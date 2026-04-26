@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vector Converter</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 40px;
+    }
+    .box {
+      border: 2px dashed #ccc;
+      padding: 20px;
+    }
+    img {
+      max-width: 300px;
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Vector Converter</h1>
+
+  <div class="box">
+    <input type="file" id="fileInput" />
+    <br/>
+    <img id="preview" />
+    <br/>
+    <button onclick="upload()">Convert</button>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+
+    fileInput.onchange = () => {
+      preview.src = URL.createObjectURL(fileInput.files[0]);
+    };
+
+    function upload() {
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('image', file);
+
+      fetch('/convert', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.blob())
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'output.svg';
+        a.click();
+      });
+    }
+  </script>
+
+</body>
+</html>
