@@ -100,6 +100,34 @@ function smoothClassMap(imgd,map,confidence,strength){
  }
  const d=imgd.data;for(let p=0,i=0;p<map.length;p++,i+=4){const q=map[p];if(q===65535){d[i+3]=0;continue}const c=palette[q];d[i]=c.r;d[i+1]=c.g;d[i+2]=c.b;d[i+3]=255}
 }
+function polishLabels(imgd,map,strength){
+ if(strength<1)return;
+ const w=imgd.width,h=imgd.height,k=palette.length,d=imgd.data;
+ // Printer Match intentionally smooths only boundaries, not large interiors.
+ const passes=strength>=60?3:2;
+ for(let pass=0;pass<passes;pass++){
+   const next=new Uint16Array(map);
+   for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){
+     const p=y*w+x,cur=map[p];if(cur===65535)continue;
+     // Skip stable interior pixels.
+     if(map[p-1]===cur&&map[p+1]===cur&&map[p-w]===cur&&map[p+w]===cur)continue;
+     const counts=new Uint8Array(k);
+     for(let yy=-2;yy<=2;yy++)for(let xx=-2;xx<=2;xx++){
+       const q=map[(y+yy)*w+x+xx];if(q!==65535&&q<k){
+         const wt=(xx===0&&yy===0)?4:(Math.abs(xx)<=1&&Math.abs(yy)<=1?2:1);
+         counts[q]+=wt;
+       }
+     }
+     let best=cur,bn=counts[cur];for(let j=0;j<k;j++)if(counts[j]>bn){bn=counts[j];best=j}
+     if(best!==cur&&bn>=12)next[p]=best;
+   }
+   map.set(next);
+ }
+ for(let p=0,i=0;p<map.length;p++,i+=4){
+   const q=map[p];if(q===65535){d[i+3]=0;continue}
+   const cc=palette[q];d[i]=cc.r;d[i+1]=cc.g;d[i+2]=cc.b;d[i+3]=255;
+ }
+}
 function transparentBg(imgd){
  if(!$('#transparent').checked)return;const bg=parseHex($('#bgColor').value),tol=+$('#bgTol').value,t=(8+tol*2.15)**2,d=imgd.data;
  for(let i=0;i<d.length;i+=4){const dr=d[i]-bg.r,dg=d[i+1]-bg.g,db=d[i+2]-bg.b;if(dr*dr+dg*dg+db*db<t)d[i+3]=0}
@@ -122,12 +150,12 @@ function detectRoundDots(map,w,h){
 function canvasFrom(imgd){const c=document.createElement('canvas');c.width=imgd.width;c.height=imgd.height;c.getContext('2d').putImageData(imgd,0,0);return c}
 function traceOptions(){
  const curve=+$('#curve').value,solid=+$('#solid').value;let lt=.72+(100-curve)*.012,qt=.34+(100-curve)*.009,pathomit=Math.max(0,Math.round(solid/24));
- if(preset==='sharp'){lt=.34;qt=.22;pathomit=1}if(preset==='detail'){lt=.18;qt=.16;pathomit=0}if(preset==='scan'){lt=.9;qt=.48}
+ if(preset==='printer'){lt=2.35;qt=1.10;pathomit=2}if(preset==='sharp'){lt=.34;qt=.22;pathomit=1}if(preset==='detail'){lt=.18;qt=.16;pathomit=0}if(preset==='scan'){lt=1.25;qt=.62}
  return{pal:palette.map(c=>({...c})),colorsampling:0,numberofcolors:palette.length,colorquantcycles:1,mincolorratio:0,layering:0,pathomit,rightangleenhance:preset==='sharp',strokewidth:0,linefilter:false,scale:1,roundcoords:2,viewbox:true,desc:false,blurradius:0,blurdelta:20,ltres:lt,qtres:qt}
 }
 function enhanceSvg(s){
  const doc=new DOMParser().parseFromString(s,'image/svg+xml'),root=doc.documentElement;root.setAttribute('shape-rendering','geometricPrecision');root.setAttribute('preserveAspectRatio','xMidYMid meet');
- [...root.querySelectorAll('path')].forEach(p=>{const f=p.getAttribute('fill');if(f&&f!=='none'){p.setAttribute('stroke',f);p.setAttribute('stroke-width',preset==='printer'?'0.32':'0.18');p.setAttribute('stroke-linejoin','round');p.setAttribute('stroke-linecap','round');p.setAttribute('paint-order','stroke fill')}})
+ [...root.querySelectorAll('path')].forEach(p=>{const f=p.getAttribute('fill');if(f&&f!=='none'){p.setAttribute('stroke',f);p.setAttribute('stroke-width',preset==='printer'?'0':'0.18');p.setAttribute('stroke-linejoin','round');p.setAttribute('stroke-linecap','round');p.setAttribute('paint-order','stroke fill')}})
  if(dotShapes.length){const ns='http://www.w3.org/2000/svg',g=doc.createElementNS(ns,'g');g.setAttribute('id','round-dot-protection');for(const q of dotShapes){if(q.color>=palette.length)continue;const c=doc.createElementNS(ns,'circle');c.setAttribute('cx',q.cx.toFixed(2));c.setAttribute('cy',q.cy.toFixed(2));c.setAttribute('r',q.r.toFixed(2));c.setAttribute('fill',rgb(palette[q.color]));g.appendChild(c)}root.appendChild(g)}
  return new XMLSerializer().serializeToString(root)
 }
@@ -141,7 +169,7 @@ async function processAll(){
  try{
    status('1/5 High-resolution supersampling…','busy');await sleep(20);const c=sourceCanvas(),g=c.getContext('2d',{willReadFrequently:true});let imgd=g.getImageData(0,0,c.width,c.height);
    status('2/5 Lighting aur texture clean ho raha hai…','busy');autoLevels(imgd,+$('#levels').value);edgeAwareSmooth(imgd,+$('#noise').value);await sleep(20);
-   status('3/5 Solid colours detect ho rahe hain…','busy');palette=$('#colors').value==='auto'?autoPalette(imgd):fixedPalette(imgd,+$('#colors').value);$('#colorStat').textContent=palette.length;const q=quantize(imgd,palette);indexMap=q.map;smoothClassMap(imgd,indexMap,q.confidence,+$('#solid').value);transparentBg(imgd);await sleep(20);
+   status('3/5 Solid colours detect ho rahe hain…','busy');palette=$('#colors').value==='auto'?autoPalette(imgd):fixedPalette(imgd,+$('#colors').value);$('#colorStat').textContent=palette.length;const q=quantize(imgd,palette);indexMap=q.map;smoothClassMap(imgd,indexMap,q.confidence,+$('#solid').value);if(preset==='printer'||preset==='scan')polishLabels(imgd,indexMap,68);transparentBg(imgd);await sleep(20);
    status('4/5 Small round details protect ho rahe hain…','busy');dotShapes=detectRoundDots(indexMap,imgd.width,imgd.height);cleanData=new ImageData(new Uint8ClampedArray(imgd.data),imgd.width,imgd.height);cleanCanvas=canvasFrom(cleanData);$('#cleanPreview').innerHTML='';const pc=cleanCanvas.cloneNode();pc.getContext('2d').drawImage(cleanCanvas,0,0);$('#cleanPreview').appendChild(pc);renderPalette();await sleep(20);
    status('5/5 Smooth Bézier SVG trace…','busy');svg=enhanceSvg(ImageTracer.imagedataToSVG(imgd,traceOptions()));$('#vectorPreview').innerHTML=svg;setButtons(true);stats(performance.now()-start);status('Done — Printer Match vector ready. Original aur Vector zoom karke compare kijiye.','good')
  }catch(e){console.error(e);status('Error: '+(e.message||e),'bad')}finally{$('#convertBtn').disabled=false}
