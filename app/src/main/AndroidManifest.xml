@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
   <application android:allowBackup="true" android:label="Vector Converter Pro" android:theme="@style/AppTheme">
     <activity android:name=".MainActivity" android:exported="true">
       <intent-filter>
