@@ -112,10 +112,10 @@ function detectRoundDots(map,w,h){
  const seen=new Uint8Array(low.length),dots=[],stack=[],minA=8,maxA=Math.max(40,Math.round(lw*lh*.0025));
  for(let sy=1;sy<lh-1;sy++)for(let sx=1;sx<lw-1;sx++){const sp=sy*lw+sx;if(seen[sp]||low[sp]===65535)continue;const col=low[sp];stack.length=0;stack.push(sp);seen[sp]=1;let area=0,sumx=0,sumy=0,minx=sx,maxx=sx,miny=sy,maxy=sy;
    while(stack.length){const p=stack.pop(),y=Math.floor(p/lw),x=p-y*lw;area++;sumx+=x;sumy+=y;if(x<minx)minx=x;if(x>maxx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;
-     const ns=[p-1,p+1,p-lw,p+lw];for(const q of ns)if(q>=0&&q<low.length&&!seen[q]&&low[q]===col){seen[q]=1;stack.push(q)}
+     const ns=[];if(x>0)ns.push(p-1);if(x<lw-1)ns.push(p+1);if(y>0)ns.push(p-lw);if(y<lh-1)ns.push(p+lw);for(const q of ns)if(!seen[q]&&low[q]===col){seen[q]=1;stack.push(q)}
    }
    if(area<minA||area>maxA)continue;const bw=maxx-minx+1,bh=maxy-miny+1,asp=bw/bh,fill=area/(bw*bh),rel=Math.max(bw,bh)/Math.max(lw,lh);
-   if(asp>.76&&asp<1.32&&fill>.55&&fill<.95&&rel<.065){const cx=(sumx/area+.5)/sc,cy=(sumy/area+.5)/sc,r=Math.sqrt(area/Math.PI)/sc*1.04;dots.push({cx,cy,r,color:col})}
+   if(asp>.76&&asp<1.32&&fill>.55&&fill<.95&&rel<.065){const cx=(sumx/area+.5)/sc,cy=(sumy/area+.5)/sc,r=(Math.max(bw,bh)/(2*sc))*1.05;dots.push({cx,cy,r,color:col})}
  }return dots.slice(0,300)
 }
 
