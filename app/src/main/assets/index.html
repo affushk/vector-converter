@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050607">
+<title>Vector Converter Pro — Textile SVG Studio</title>
+<style>
+:root{--bg:#050607;--card:#0d1117;--card2:#121923;--line:#253041;--text:#f5f7fa;--muted:#8c98aa;--gold:#e4bd55;--green:#4dd7a7;--danger:#ff6c7a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#121a26 0,transparent 35%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}.app{max-width:1200px;margin:auto;padding:14px 12px 80px}.top{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;background:linear-gradient(180deg,rgba(5,6,7,.98),rgba(5,6,7,.82),transparent);backdrop-filter:blur(14px)}.brand{display:flex;gap:10px;align-items:center}.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#f3d36e,#9d6b06);display:grid;place-items:center;color:#050607;font-weight:900}.brand h1{font-size:17px;margin:0}.brand small{display:block;color:var(--muted);font-size:11px}.btn{border:1px solid var(--line);background:#111823;color:var(--text);padding:11px 14px;border-radius:13px;font-weight:800;cursor:pointer}.btn.primary{background:linear-gradient(135deg,#f0d06e,#a9780d);color:#080808;border:0}.btn:disabled{opacity:.45}.hero{padding:20px 0 14px}.hero h2{font-size:clamp(30px,5vw,52px);margin:0 0 8px;letter-spacing:-1.4px}.hero h2 span{color:var(--gold)}.hero p{margin:0;color:var(--muted);line-height:1.55;max-width:820px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{background:linear-gradient(180deg,#10151d,#0b0f14);border:1px solid var(--line);border-radius:20px;padding:15px}.card h3{margin:0 0 6px;font-size:16px}.sub{color:var(--muted);font-size:12px;line-height:1.45}.upload{margin-top:12px;border:1px dashed #3a4658;border-radius:17px;padding:18px;text-align:center;position:relative;background:#090d12}.upload input{position:absolute;inset:0;opacity:0;cursor:pointer}.upload strong{display:block;margin-bottom:4px}.previewbox{margin-top:12px;background:#090b0f;border:1px solid var(--line);border-radius:16px;min-height:260px;display:grid;place-items:center;overflow:hidden}.previewbox img,.previewbox svg{max-width:100%;max-height:520px;width:auto;height:auto}.empty{color:#667284;font-size:12px;text-align:center;padding:30px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:11px;color:#c5ced9;font-weight:800}.field select,.field input[type=range]{width:100%}.field select{background:#090d12;color:#fff;border:1px solid var(--line);border-radius:12px;padding:11px}.rangebox{border:1px solid var(--line);background:#090d12;border-radius:13px;padding:10px}.rhead{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:7px}.rangebox input{accent-color:var(--gold)}.actions{display:flex;gap:8px;margin-top:12px}.actions .btn{flex:1}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.stat{background:#090d12;border:1px solid var(--line);border-radius:12px;padding:10px}.stat b{display:block;font-size:14px}.stat span{font-size:10px;color:var(--muted)}.note{margin-top:14px;padding:11px 12px;border-left:3px solid var(--gold);background:#161307;border-radius:9px;color:#d9d2b8;font-size:12px;line-height:1.5}.pill{display:inline-block;padding:5px 8px;border:1px solid #314055;border-radius:999px;font-size:10px;color:#b8c3d0;margin:4px 4px 0 0}.footer{text-align:center;color:#657082;font-size:11px;margin-top:25px}.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(70px);opacity:0;background:#101722;border:1px solid #354357;border-radius:999px;padding:10px 14px;transition:.2s;z-index:99}.toast.show{transform:translateX(-50%) translateY(0);opacity:1}.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}.label{font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700}
+@media(max-width:780px){.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.compare{grid-template-columns:1fr}.top .hideMobile{display:none}.hero{padding-top:8px}.hero h2{font-size:34px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand"><div class="logo">VC</div><div><h1>Vector Converter Pro</h1><small>Textile SVG Studio • Altaf Designer</small></div></div>
+    <button class="btn primary" id="downloadTop" disabled>Download SVG</button>
+  </div>
+
+  <section class="hero">
+    <h2>JPG/PNG ko <span>clean SVG vector</span> me convert karo</h2>
+    <p>Mobile-friendly local vectorizer. Image upload karo, colours aur detail control karo, SVG preview dekho aur direct download karo. Paid API ki zarurat nahi.</p>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h3>1. Image Upload</h3>
+      <div class="sub">Textile motif, scan, logo ya flat artwork upload karo.</div>
+      <div class="upload"><input type="file" id="fileInput" accept="image/*"><strong>📷 JPG / PNG choose karo</strong><span class="sub">Tap to select image</span></div>
+      <div class="previewbox" id="originalBox"><div class="empty">Original image yahan dikhegi</div></div>
+      <div class="stats">
+        <div class="stat"><b id="dim">—</b><span>Image size</span></div>
+        <div class="stat"><b id="fileSize">—</b><span>File size</span></div>
+        <div class="stat"><b id="modeStat">Textile Solid</b><span>Preset</span></div>
+        <div class="stat"><b id="colorStat">8</b><span>Target colours</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>2. Vector Settings</h3>
+      <div class="sub">Magic Wand-friendly flat colours ke liye Textile Solid preset recommended hai.</div>
+      <div class="fields">
+        <div class="field"><label>Preset</label><select id="preset"><option value="textile">Textile Solid</option><option value="sharp">Sharp Motif</option><option value="detailed">Detailed Artwork</option><option value="smooth">Smooth Print</option><option value="grayscale">Grayscale</option></select></div>
+        <div class="field"><label>Target Colours</label><select id="colors"><option>4</option><option selected>8</option><option>12</option><option>16</option><option>24</option><option>32</option><option>48</option><option>64</option></select></div>
+      </div>
+      <div class="fields">
+        <div class="rangebox"><div class="rhead"><span>Shape Detail</span><b id="detailVal">70</b></div><input id="detail" type="range" min="10" max="100" value="70"></div>
+        <div class="rangebox"><div class="rhead"><span>Smoothing</span><b id="smoothVal">15</b></div><input id="smooth" type="range" min="0" max="100" value="15"></div>
+        <div class="rangebox"><div class="rhead"><span>Remove Speckles</span><b id="speckVal">6</b></div><input id="speck" type="range" min="0" max="30" value="6"></div>
+        <div class="rangebox"><div class="rhead"><span>Curve Precision</span><b id="curveVal">70</b></div><input id="curve" type="range" min="10" max="100" value="70"></div>
+      </div>
+      <div class="actions"><button class="btn primary" id="convertBtn" disabled>Vectorize Now</button><button class="btn" id="resetBtn">Reset</button></div>
+      <div class="note"><b>Textile tip:</b> 4–16 colours se solid separations clean milti hain. Very detailed scans ke liye 24–64 colours use karo. Final print ke pehle SVG ko Photoshop/Illustrator me zoom karke edges check kar lena.</div>
+      <div style="margin-top:10px"><span class="pill">Offline conversion</span><span class="pill">No paid API</span><span class="pill">SVG download</span><span class="pill">Solid colour mode</span></div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:14px">
+    <h3>3. Original vs Vector Preview</h3>
+    <div class="sub">Vector result generate hone ke baad side-by-side compare karo.</div>
+    <div class="compare" style="margin-top:12px">
+      <div><div class="label">ORIGINAL</div><div class="previewbox" id="compareOriginal"><div class="empty">Upload image first</div></div></div>
+      <div><div class="label">VECTOR SVG</div><div class="previewbox" id="vectorBox"><div class="empty">Vectorize Now dabao</div></div></div>
+    </div>
+    <div class="actions"><button class="btn primary" id="downloadBtn" disabled>⬇ Download SVG</button><button class="btn" id="copyBtn" disabled>Copy SVG Code</button></div>
+  </section>
+
+  <div class="footer">Vector Converter Pro • Client-side ImageTracer vectorization • Built for digital textile workflow</div>
+</div>
+<div class="toast" id="toast">Done</div>
+<script src="./imagetracer_v1.2.6.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+let sourceImg=null, sourceDataUrl='', svgOutput='';
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__t);window.__t=setTimeout(()=>e.classList.remove('show'),1500)}
+function fmt(bytes){if(bytes<1024)return bytes+' B';if(bytes<1048576)return(bytes/1024).toFixed(1)+' KB';return(bytes/1048576).toFixed(1)+' MB'}
+function imgTag(src){return '<img src="'+src+'" alt="preview">'}
+$('#fileInput').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    sourceDataUrl=reader.result;
+    const img=new Image();
+    img.onload=()=>{
+      sourceImg=img;
+      $('#originalBox').innerHTML=imgTag(sourceDataUrl);
+      $('#compareOriginal').innerHTML=imgTag(sourceDataUrl);
+      $('#dim').textContent=img.naturalWidth+'×'+img.naturalHeight;
+      $('#fileSize').textContent=fmt(f.size);
+      $('#convertBtn').disabled=false;
+      svgOutput='';
+      $('#vectorBox').innerHTML='<div class="empty">Vectorize Now dabao</div>';
+      $('#downloadBtn').disabled=true;$('#downloadTop').disabled=true;$('#copyBtn').disabled=true;
+      toast('Image loaded');
+    };
+    img.src=sourceDataUrl;
+  };
+  reader.readAsDataURL(f);
+});
+function options(){
+  const preset=$('#preset').value, n=+$('#colors').value, d=+$('#detail').value, sm=+$('#smooth').value, sp=+$('#speck').value, cv=+$('#curve').value;
+  let o={colorsampling:2,numberofcolors:n,mincolorratio:0,colorquantcycles:3,layering:0,strokewidth:0,linefilter:false,scale:1,roundcoords:1,viewbox:true,desc:false,rightangleenhance:true,pathomit:sp,blurradius:Math.round(sm/25),blurdelta:20,ltres:Math.max(.05,(110-d)/35),qtres:Math.max(.05,(110-cv)/35)};
+  if(preset==='sharp'){o.qtres=.05;o.ltres=.4;o.blurradius=0;o.rightangleenhance=true}
+  if(preset==='detailed'){o.pathomit=0;o.roundcoords=2;o.ltres=.35;o.qtres=.35;o.numberofcolors=Math.max(n,24)}
+  if(preset==='smooth'){o.blurradius=Math.max(2,Math.round(sm/20));o.blurdelta=64;o.linefilter=true}
+  if(preset==='grayscale'){o.colorsampling=0;o.colorquantcycles=1;o.numberofcolors=Math.max(4,Math.min(n,16))}
+  if(preset==='textile'){o.colorsampling=2;o.strokewidth=0;o.rightangleenhance=true;o.colorquantcycles=4}
+  return o;
+}
+function vectorize(){
+  if(!sourceImg)return;
+  $('#convertBtn').disabled=true;$('#convertBtn').textContent='Vectorizing...';
+  setTimeout(()=>{
+    try{
+      const maxSide=1400, scale=Math.min(1,maxSide/sourceImg.naturalWidth,maxSide/sourceImg.naturalHeight);
+      const c=document.createElement('canvas');c.width=Math.max(1,Math.round(sourceImg.naturalWidth*scale));c.height=Math.max(1,Math.round(sourceImg.naturalHeight*scale));
+      const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(sourceImg,0,0,c.width,c.height);
+      const imgd=g.getImageData(0,0,c.width,c.height);
+      svgOutput=ImageTracer.imagedataToSVG(imgd,options());
+      $('#vectorBox').innerHTML=svgOutput;
+      $('#downloadBtn').disabled=false;$('#downloadTop').disabled=false;$('#copyBtn').disabled=false;
+      toast('SVG ready');
+    }catch(err){console.error(err);toast('Vector conversion failed')}
+    $('#convertBtn').disabled=false;$('#convertBtn').textContent='Vectorize Now';
+  },60);
+}
+function download(){
+  if(!svgOutput)return;
+  const blob=new Blob([svgOutput],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='vector-converted.svg';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('SVG downloaded');
+}
+$('#convertBtn').onclick=vectorize;$('#downloadBtn').onclick=download;$('#downloadTop').onclick=download;
+$('#copyBtn').onclick=async()=>{if(!svgOutput)return;try{await navigator.clipboard.writeText(svgOutput);toast('SVG code copied')}catch(e){toast('Copy not supported')}};
+$('#resetBtn').onclick=()=>{location.reload()};
+['detail','smooth','speck','curve'].forEach(id=>$('#'+id).addEventListener('input',()=>$('#'+id+'Val').textContent=$('#'+id).value));
+$('#colors').addEventListener('change',()=>$('#colorStat').textContent=$('#colors').value);
+$('#preset').addEventListener('change',()=>$('#modeStat').textContent=$('#preset').selectedOptions[0].textContent);
+</script>
+</body>
+</html>
