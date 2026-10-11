@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#080b10" />
+<title>Vector Converter Pro v3 — Textile Clean Vector</title>
+<link rel="stylesheet" href="./v3.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="logo">VC</div><div><h1>Vector Converter Pro v3</h1><small>Textile Clean Vector • Altaf Designer</small></div></div>
+    <button class="btn primary desktopOnly" id="topSvg" disabled>Save SVG</button>
+  </header>
+
+  <section class="hero">
+    <h2>Photo ko pehle <span>textile-clean</span> karo, phir vector banao</h2>
+    <p>Camera shadow, fabric texture aur same colour ki light/dark variation ko pehle flatten karta hai. Phir fixed solid palette ke saath SVG trace hota hai — Magic Wand friendly textile workflow ke liye.</p>
+    <span class="badge">100% browser-side</span><span class="badge">No paid API</span><span class="badge">Solid palette</span><span class="badge">SVG + PNG</span>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h3>1. Upload Design</h3>
+      <div class="sub">Garment crop, scan, motif, logo ya JPG/PNG/WebP.</div>
+      <div class="upload"><input id="file" type="file" accept="image/*"><strong>📷 Image choose karo</strong><span class="sub">Tap to upload</span></div>
+      <div class="preview" id="original"><div class="empty">Original image yahan dikhegi</div></div>
+      <div class="stats">
+        <div class="stat"><b id="dim">—</b><span>Image</span></div>
+        <div class="stat"><b id="size">—</b><span>File</span></div>
+        <div class="stat"><b id="modeStat">Textile Solid</b><span>Preset</span></div>
+        <div class="stat"><b id="colorStat">8</b><span>Colours</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>2. Textile Cleanup</h3>
+      <div class="sub">Paid-style result ka main secret yahi stage hai: trace se pehle pixels ko clean aur solid banana.</div>
+      <div class="presetbar" id="presets">
+        <button class="preset active" data-preset="textile">Textile Solid</button>
+        <button class="preset" data-preset="scan">Scan Rescue</button>
+        <button class="preset" data-preset="sharp">Sharp Motif</button>
+        <button class="preset" data-preset="detail">Fine Detail</button>
+        <button class="preset" data-preset="line">Line Art</button>
+      </div>
+      <div class="fields">
+        <div class="field"><label>Target solid colours</label><select id="colors"><option>2</option><option>4</option><option selected>8</option><option>12</option><option>16</option><option>24</option><option>32</option></select></div>
+        <div class="field"><label>Processing size</label><select id="quality"><option value="1200">Fast • 1200px</option><option value="1800" selected>High • 1800px</option><option value="2400">Ultra • 2400px</option></select></div>
+      </div>
+      <div class="fields">
+        <div class="range"><div class="rangehead"><span>Lighting normalize</span><b id="levelsV">70</b></div><input id="levels" type="range" min="0" max="100" value="70"></div>
+        <div class="range"><div class="rangehead"><span>Texture noise remove</span><b id="noiseV">45</b></div><input id="noise" type="range" min="0" max="100" value="45"></div>
+        <div class="range"><div class="rangehead"><span>Solid shape cleanup</span><b id="solidV">65</b></div><input id="solid" type="range" min="0" max="100" value="65"></div>
+        <div class="range"><div class="rangehead"><span>Curve precision</span><b id="curveV">78</b></div><input id="curve" type="range" min="10" max="100" value="78"></div>
+      </div>
+      <label class="toggle"><input id="magic" type="checkbox" checked>Magic Wand Friendly — same colour ko exact same RGB rakho</label>
+      <label class="toggle"><input id="transparent" type="checkbox">Background transparent karo</label>
+      <div class="fields" id="bgFields" style="display:none">
+        <div class="field"><label>Background colour</label><input id="bgColor" type="color" value="#ffffff"></div>
+        <div class="range"><div class="rangehead"><span>BG tolerance</span><b id="bgTolV">24</b></div><input id="bgTol" type="range" min="0" max="100" value="24"></div>
+      </div>
+      <div class="actions"><button class="btn primary" id="cleanBtn" disabled>Clean + Vectorize</button><button class="btn" id="resetBtn">Reset</button></div>
+      <div class="status" id="status">Image upload kijiye.</div>
+    </section>
+  </div>
+
+  <section class="card section">
+    <h3>3. Original → Clean Pixels → Vector</h3>
+    <div class="sub">Beech wala CLEAN preview check karein. Agar yahin colour separation clean hai, SVG bhi zyada clean niklega.</div>
+    <div class="compare">
+      <div><div class="label">ORIGINAL</div><div class="preview" id="cmpOriginal"><div class="empty">Upload image</div></div></div>
+      <div><div class="label">CLEAN SOLID PIXELS</div><div class="preview" id="cleanPreview"><div class="empty">Clean + Vectorize dabao</div></div></div>
+      <div><div class="label">VECTOR SVG</div><div class="preview" id="vectorPreview"><div class="empty">Vector result yahan</div></div></div>
+    </div>
+  </section>
+
+  <section class="card section">
+    <h3>4. Generated Palette</h3>
+    <div class="sub">Har swatch exact solid RGB hai. Swatch tap karke colour badal sakte hain, phir Rebuild SVG.</div>
+    <div class="palette" id="palette"><span class="sub">Result ke baad palette yahan aayegi.</span></div>
+    <div class="actions"><button class="btn" id="rebuild" disabled>Rebuild with Edited Palette</button><button class="btn" id="merge" disabled>Merge Similar Colours</button></div>
+  </section>
+
+  <section class="card section">
+    <h3>5. Output</h3>
+    <div class="stats">
+      <div class="stat"><b id="pathCount">—</b><span>SVG paths</span></div>
+      <div class="stat"><b id="svgSize">—</b><span>SVG size</span></div>
+      <div class="stat"><b id="outColors">—</b><span>Solid colours</span></div>
+      <div class="stat"><b id="processTime">—</b><span>Process time</span></div>
+    </div>
+    <div class="downloadgrid"><button class="btn primary" id="svgBtn" disabled>⬇ Download SVG</button><button class="btn good" id="pngBtn" disabled>🖼 Download Clean PNG</button><button class="btn" id="copyBtn" disabled>Copy SVG Code</button></div>
+    <div class="note"><b>Important:</b> Garment folds ke andar jo motif physically chhupa hua hai, koi automatic vectorizer us unseen shape ko 100% recover nahi kar sakta. Ye version visible pixels ko textile-print friendly solid shapes mein clean karta hai; final professional correction ke liye Pen Tool ab bhi best last step hai.</div>
+  </section>
+
+  <div class="footer">Vector Converter Pro v3 • browser-side ImageTracer engine + custom textile preprocessing</div>
+</div>
+
+<script src="./imagetracer_v1.2.6.js"></script>
+<script src="./v3.js"></script>
+</body>
+</html>
