@@ -1,0 +1,47 @@
+name: Build Vector Converter APK
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'app/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vector-converter-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Build APK
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Prepare APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk Vector-Converter-Pro.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Vector-Converter-Pro-APK
+          path: Vector-Converter-Pro.apk
+      - name: Publish rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view latest-vector-build >/dev/null 2>&1; then
+            gh release upload latest-vector-build Vector-Converter-Pro.apk --clobber
+          else
+            gh release create latest-vector-build Vector-Converter-Pro.apk --title "Vector Converter Pro — Latest APK" --notes "Auto-built offline vector converter APK." --latest
+          fi
