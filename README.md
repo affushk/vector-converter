@@ -1,17 +1,21 @@
-# Vector Converter Pro
+# Vector Converter Pro v4
 
-Mobile-first JPG/PNG to SVG vector converter for digital textile work.
+Mobile-first JPG/PNG to SVG vector converter tuned for digital textile artwork.
 
-## Features
-- Client-side vectorization; no paid API
-- Textile Solid, Sharp Motif, Detailed Artwork, Smooth Print and Grayscale presets
-- 4–64 target colours
-- Shape detail, smoothing, speckle removal and curve controls
-- Original vs vector preview
-- SVG download
-- Android APK build through GitHub Actions
+## v4 Printer Match upgrades
+- High-resolution internal supersampling
+- Auto solid-colour detection
+- Shape-preserving cleanup
+- Small round-dot protection
+- Smoother curve tracing
+- Magic-Wand-friendly exact solid RGB palette
+- Editable palette
+- SVG + clean PNG export
+- Printer Match, Textile Solid, Sharp Motif, Fine Detail and Scan Rescue modes
+- No paid API; browser-side processing
 
 Website preview:
-https://raw.githack.com/affushk/vector-converter/main/public/index.html
+https://raw.githack.com/affushk/vector-converter/main/public/v4.html
 
+Previous v3 is still kept in the repository.
 The bundled vector engine is ImageTracerJS 1.2.6 (Unlicense / public domain).
