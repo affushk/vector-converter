@@ -11,7 +11,7 @@ function d2(a,b){const dr=a.r-b.r,dg=a.g-b.g,db=a.b-b.b;return dr*dr*1.15+dg*dg*
 function rgb(c){return 'rgb('+c.r+','+c.g+','+c.b+')'}
 
 const presetCfg={
- printer:{levels:54,noise:34,solid:46,curve:94,quality:'2400',colors:'auto'},
+ printer:{levels:0,noise:22,solid:18,curve:70,quality:'1600',colors:'4'},
  textile:{levels:68,noise:44,solid:62,curve:86,quality:'2400',colors:'8'},
  sharp:{levels:50,noise:22,solid:38,curve:98,quality:'2400',colors:'6'},
  detail:{levels:36,noise:12,solid:22,curve:99,quality:'3200',colors:'16'},
@@ -37,7 +37,7 @@ $('#file').addEventListener('change',e=>{
 
 function sourceCanvas(){
  const max=+$('#quality').value||2400,w=srcImg.naturalWidth,h=srcImg.naturalHeight,long=Math.max(w,h);
- let target=$('#supersample').checked?max:Math.min(max,long);
+ let target=$('#supersample').checked?Math.min(max,long*2):Math.min(max,long);
  if(preset==='detail'&&$('#supersample').checked)target=Math.min(4000,max);
  const sc=target/long,c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*sc));c.height=Math.max(1,Math.round(h*sc));
  const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(srcImg,0,0,c.width,c.height);return c
@@ -133,30 +133,14 @@ function transparentBg(imgd){
  for(let i=0;i<d.length;i+=4){const dr=d[i]-bg.r,dg=d[i+1]-bg.g,db=d[i+2]-bg.b;if(dr*dr+dg*dg+db*db<t)d[i+3]=0}
 }
 
-function detectRoundDots(map,w,h){
- if(!$('#dotProtect').checked||preset==='detail')return[];
- const maxSide=600,sc=Math.min(1,maxSide/Math.max(w,h)),lw=Math.max(1,Math.round(w*sc)),lh=Math.max(1,Math.round(h*sc)),low=new Uint16Array(lw*lh);
- for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){low[y*lw+x]=map[Math.min(h-1,Math.floor(y/sc))*w+Math.min(w-1,Math.floor(x/sc))]}
- const seen=new Uint8Array(low.length),dots=[],stack=[],minA=8,maxA=Math.max(40,Math.round(lw*lh*.0025));
- for(let sy=1;sy<lh-1;sy++)for(let sx=1;sx<lw-1;sx++){const sp=sy*lw+sx;if(seen[sp]||low[sp]===65535)continue;const col=low[sp];stack.length=0;stack.push(sp);seen[sp]=1;let area=0,sumx=0,sumy=0,minx=sx,maxx=sx,miny=sy,maxy=sy;
-   while(stack.length){const p=stack.pop(),y=Math.floor(p/lw),x=p-y*lw;area++;sumx+=x;sumy+=y;if(x<minx)minx=x;if(x>maxx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;
-     const ns=[];if(x>0)ns.push(p-1);if(x<lw-1)ns.push(p+1);if(y>0)ns.push(p-lw);if(y<lh-1)ns.push(p+lw);for(const q of ns)if(!seen[q]&&low[q]===col){seen[q]=1;stack.push(q)}
-   }
-   if(area<minA||area>maxA)continue;const bw=maxx-minx+1,bh=maxy-miny+1,asp=bw/bh,fill=area/(bw*bh),rel=Math.max(bw,bh)/Math.max(lw,lh);
-   if(asp>.76&&asp<1.32&&fill>.55&&fill<.95&&rel<.065){const cx=(sumx/area+.5)/sc,cy=(sumy/area+.5)/sc,r=(Math.max(bw,bh)/(2*sc))*1.05;dots.push({cx,cy,r,color:col})}
- }return dots.slice(0,300)
-}
-
 function canvasFrom(imgd){const c=document.createElement('canvas');c.width=imgd.width;c.height=imgd.height;c.getContext('2d').putImageData(imgd,0,0);return c}
 function traceOptions(){
  const curve=+$('#curve').value,solid=+$('#solid').value;let lt=.72+(100-curve)*.012,qt=.34+(100-curve)*.009,pathomit=Math.max(0,Math.round(solid/24));
- if(preset==='printer'){lt=2.35;qt=1.10;pathomit=2}if(preset==='sharp'){lt=.34;qt=.22;pathomit=1}if(preset==='detail'){lt=.18;qt=.16;pathomit=0}if(preset==='scan'){lt=1.25;qt=.62}
+ if(preset==='printer'){lt=.05+(100-curve)*.003;qt=.3+(100-curve)*.04;pathomit=0}if(preset==='sharp'){lt=.2+(100-curve)*.04;qt=.12+(100-curve)*.025;pathomit=0}if(preset==='detail'){lt=.12+(100-curve)*.02;qt=.10+(100-curve)*.015;pathomit=0}if(preset==='scan'){lt=.5+(100-curve)*.06;qt=.25+(100-curve)*.03}
  return{pal:palette.map(c=>({...c})),colorsampling:0,numberofcolors:palette.length,colorquantcycles:1,mincolorratio:0,layering:0,pathomit,rightangleenhance:preset==='sharp',strokewidth:0,linefilter:false,scale:1,roundcoords:2,viewbox:true,desc:false,blurradius:0,blurdelta:20,ltres:lt,qtres:qt}
 }
 function enhanceSvg(s){
  const doc=new DOMParser().parseFromString(s,'image/svg+xml'),root=doc.documentElement;root.setAttribute('shape-rendering','geometricPrecision');root.setAttribute('preserveAspectRatio','xMidYMid meet');
- [...root.querySelectorAll('path')].forEach(p=>{const f=p.getAttribute('fill');if(f&&f!=='none'){p.setAttribute('stroke',f);p.setAttribute('stroke-width',preset==='printer'?'0':'0.18');p.setAttribute('stroke-linejoin','round');p.setAttribute('stroke-linecap','round');p.setAttribute('paint-order','stroke fill')}})
- if(dotShapes.length){const ns='http://www.w3.org/2000/svg',g=doc.createElementNS(ns,'g');g.setAttribute('id','round-dot-protection');for(const q of dotShapes){if(q.color>=palette.length)continue;const c=doc.createElementNS(ns,'circle');c.setAttribute('cx',q.cx.toFixed(2));c.setAttribute('cy',q.cy.toFixed(2));c.setAttribute('r',q.r.toFixed(2));c.setAttribute('fill',rgb(palette[q.color]));g.appendChild(c)}root.appendChild(g)}
  return new XMLSerializer().serializeToString(root)
 }
 function renderPalette(){
@@ -169,8 +153,8 @@ async function processAll(){
  try{
    status('1/5 High-resolution supersampling…','busy');await sleep(20);const c=sourceCanvas(),g=c.getContext('2d',{willReadFrequently:true});let imgd=g.getImageData(0,0,c.width,c.height);
    status('2/5 Lighting aur texture clean ho raha hai…','busy');autoLevels(imgd,+$('#levels').value);edgeAwareSmooth(imgd,+$('#noise').value);await sleep(20);
-   status('3/5 Solid colours detect ho rahe hain…','busy');palette=$('#colors').value==='auto'?autoPalette(imgd):fixedPalette(imgd,+$('#colors').value);$('#colorStat').textContent=palette.length;const q=quantize(imgd,palette);indexMap=q.map;smoothClassMap(imgd,indexMap,q.confidence,+$('#solid').value);if(preset==='printer'||preset==='scan')polishLabels(imgd,indexMap,68);transparentBg(imgd);await sleep(20);
-   status('4/5 Small round details protect ho rahe hain…','busy');dotShapes=detectRoundDots(indexMap,imgd.width,imgd.height);cleanData=new ImageData(new Uint8ClampedArray(imgd.data),imgd.width,imgd.height);cleanCanvas=canvasFrom(cleanData);$('#cleanPreview').innerHTML='';const pc=cleanCanvas.cloneNode();pc.getContext('2d').drawImage(cleanCanvas,0,0);$('#cleanPreview').appendChild(pc);renderPalette();await sleep(20);
+   status('3/5 Solid colours detect ho rahe hain…','busy');palette=$('#colors').value==='auto'?autoPalette(imgd):fixedPalette(imgd,+$('#colors').value);$('#colorStat').textContent=palette.length;const q=quantize(imgd,palette);indexMap=q.map;smoothClassMap(imgd,indexMap,q.confidence,+$('#solid').value);if(preset==='scan')polishLabels(imgd,indexMap,+$('#solid').value);transparentBg(imgd);await sleep(20);
+   status('4/5 Original details preserve ho rahe hain…','busy');dotShapes=[];cleanData=new ImageData(new Uint8ClampedArray(imgd.data),imgd.width,imgd.height);cleanCanvas=canvasFrom(cleanData);$('#cleanPreview').innerHTML='';const pc=cleanCanvas.cloneNode();pc.getContext('2d').drawImage(cleanCanvas,0,0);$('#cleanPreview').appendChild(pc);renderPalette();await sleep(20);
    status('5/5 Smooth Bézier SVG trace…','busy');svg=enhanceSvg(ImageTracer.imagedataToSVG(imgd,traceOptions()));$('#vectorPreview').innerHTML=svg;setButtons(true);stats(performance.now()-start);status('Done — Printer Match vector ready. Original aur Vector zoom karke compare kijiye.','good')
  }catch(e){console.error(e);status('Error: '+(e.message||e),'bad')}finally{$('#convertBtn').disabled=false}
 }
@@ -190,9 +174,23 @@ $('#merge').onclick=()=>{
  for(let i=0;i<indexMap.length;i++)if(indexMap[i]!==65535)indexMap[i]=remap[indexMap[i]];dotShapes.forEach(q=>q.color=remap[q.color]);palette=out;$('#colorStat').textContent=palette.length;rebuild()
 };
 
-function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},60000)}
 $('#svgBtn').onclick=$('#topSvg').onclick=()=>svg&&download('printer-match-vector.svg',new Blob([svg],{type:'image/svg+xml'}));
-$('#pngBtn').onclick=()=>cleanCanvas&&cleanCanvas.toBlob(b=>b&&download('printer-match-clean.png',b),'image/png');
+async function vectorPngCanvas(){
+ if(!svg||!cleanCanvas)throw new Error('Pehle vectorize kijiye.');
+ const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
+ try{
+  const im=new Image();await new Promise((resolve,reject)=>{im.onload=resolve;im.onerror=()=>reject(new Error('SVG render failed'));im.src=url});
+  const c=document.createElement('canvas');c.width=cleanCanvas.width;c.height=cleanCanvas.height;
+  c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c;
+ }finally{URL.revokeObjectURL(url)}
+}
+$('#pngBtn').onclick=async()=>{
+ if(!svg)return;
+ const button=$('#pngBtn');button.disabled=true;
+ try{const c=await vectorPngCanvas();const blob=await new Promise(r=>c.toBlob(r,'image/png'));if(!blob)throw new Error('PNG export failed');download('textile-vector.png',blob);status('Vector PNG download shuru ho gaya.','good')}
+ catch(e){status(e.message,'bad')}finally{button.disabled=false}
+};
 $('#copyBtn').onclick=async()=>{if(!svg)return;try{await navigator.clipboard.writeText(svg);status('SVG code copied.','good')}catch{status('Copy blocked — SVG Download use kijiye.','bad')}};
 $('#resetBtn').onclick=()=>{srcImg=null;srcUrl='';srcFile=null;cleanCanvas=null;cleanData=null;palette=[];indexMap=null;svg='';dotShapes=[];$('#file').value='';$('#original').innerHTML='<div class="empty">Original image yahan dikhegi</div>';$('#cmpOriginal').innerHTML='<div class="empty">Upload image</div>';$('#cleanPreview').innerHTML='<div class="empty">Vectorize dabao</div>';$('#vectorPreview').innerHTML='<div class="empty">Vector result</div>';$('#palette').innerHTML='<span class="sub">Result ke baad palette aayegi.</span>';$('#dim').textContent=$('#size').textContent='—';$('#convertBtn').disabled=true;setButtons(false);['pathCount','svgSize','outColors','processTime'].forEach(id=>$('#'+id).textContent='—');applyPreset('printer');status('Reset done.')};
 

@@ -4,20 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070a0f">
-<title>Vector Converter Pro v4.1 — Printer Match</title>
-<link rel="stylesheet" href="./v4.css?v=41">
+<title>Vector Converter Pro v4.2 — Printer Match</title>
+<link rel="stylesheet" href="./v4.css?v=42">
 </head>
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="logo">V4</div><div><h1>Vector Converter Pro v4.1</h1><small>Printer Match • Textile Vector Studio • Altaf Designer</small></div></div>
+    <div class="brand"><div class="logo">V4</div><div><h1>Vector Converter Pro v4.2</h1><small>Printer Match • Textile Vector Studio • Altaf Designer</small></div></div>
     <button class="btn primary desktopOnly" id="topSvg" disabled>Save SVG</button>
   </header>
 
   <section class="hero">
     <h2><span>Printer Match</span> quality ke liye naya vector pipeline</h2>
-    <p>High-resolution supersampling, contour polish, auto solid-colour detection, shape-preserving cleanup, small-dot protection aur smoother SVG tracing — textile motifs ke liye specially tuned.</p>
-    <span class="badge">No paid API</span><span class="badge">High-res internal trace</span><span class="badge">Auto 2–12 colours</span><span class="badge">Dot protection</span>
+    <p>Original colours preserve, adjustable curve fitting aur SVG se matching PNG export. Is 4-colour motif ke liye Printer Match se shuru karein; doosre designs mein colour count badlein.</p>
+    <span class="badge">No paid API</span><span class="badge">High-res internal trace</span><span class="badge">Auto 2–12 colours</span><span class="badge">No circle overlays</span>
   </section>
 
   <div class="grid">
@@ -62,8 +62,8 @@
         <div class="range"><div class="rangehead"><span>Curve precision</span><b id="curveV">94</b></div><input id="curve" type="range" min="10" max="100" value="94"></div>
       </div>
 
-      <label class="toggle"><input id="supersample" type="checkbox" checked>2× supersample — low-res edges ko smoother banaye</label>
-      <label class="toggle"><input id="dotProtect" type="checkbox" checked>Small round dot protection</label>
+      <label class="toggle"><input id="supersample" type="checkbox" checked>Up to 2× sampling — quality limit ke andar</label>
+      <div class="sub">Original dots trace hote hain; extra circles add nahi hote.</div>
       <label class="toggle"><input id="magic" type="checkbox" checked disabled>Magic Wand Friendly exact solid RGB — always ON</label>
       <label class="toggle"><input id="transparent" type="checkbox">Background transparent</label>
 
@@ -101,13 +101,13 @@
       <div class="stat"><b id="outColors">—</b><span>Colours</span></div>
       <div class="stat"><b id="processTime">—</b><span>Time</span></div>
     </div>
-    <div class="downloadgrid"><button class="btn primary" id="svgBtn" disabled>⬇ Download SVG</button><button class="btn good" id="pngBtn" disabled>🖼 Download Clean PNG</button><button class="btn" id="copyBtn" disabled>Copy SVG Code</button></div>
-    <div class="note"><b>Target:</b> paid-style smooth solid vector. Hidden/folded garment parts ko software guess nahi karega; visible shape ko clean aur editable banane par focus hai.</div>
+    <div class="downloadgrid"><button class="btn primary" id="svgBtn" disabled>⬇ Download SVG</button><button class="btn good" id="pngBtn" disabled>🖼 Download Vector PNG</button><button class="btn" id="copyBtn" disabled>Copy SVG Code</button></div>
+    <div class="note"><b>Target:</b> original shapes ke saath smooth solid vector. Hidden/folded garment parts ko software guess nahi karega; visible shape ko clean aur editable banane par focus hai.</div>
   </section>
 
   <div class="footer">Vector Converter Pro v4 • custom textile preprocessing + ImageTracer SVG engine</div>
 </div>
 <script src="./imagetracer_v1.2.6.js"></script>
-<script src="./v4.js?v=41"></script>
+<script src="./v4.js?v=42"></script>
 </body>
 </html>
