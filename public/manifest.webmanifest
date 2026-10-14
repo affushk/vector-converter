@@ -1,0 +1,10 @@
+{
+  "name": "Altaf Textile Designer",
+  "short_name": "Altaf Textile",
+  "description": "Textile vector studio with colour separation, live compare, Photoshop SVG/EPS and sharp PNG export.",
+  "start_url": "./altaf-textile-designer.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070a0f",
+  "theme_color": "#070a0f"
+}
