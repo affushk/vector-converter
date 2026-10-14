@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070a0f">
+<title>Vector Converter Pro v5.3 VECTOR GRAPH CORE — Printer Match</title>
+<link rel="stylesheet" href="./v53.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="logo">V4</div><div><h1>Vector Converter Pro v5.3 VECTOR GRAPH CORE</h1><small>Printer Match • Textile Vector Studio • Altaf Designer</small></div></div>
+    <button class="btn primary desktopOnly" id="topSvg" disabled>Save SVG</button>
+  </header>
+
+  <section class="hero">
+    <h2><span>Printer Match</span> quality ke liye naya vector pipeline</h2>
+    <p>Original colours preserve, adjustable curve fitting aur SVG se matching PNG export. Is 4-colour motif ke liye Printer Match se shuru karein; doosre designs mein colour count badlein.</p>
+    <span class="badge">No paid API</span><span class="badge">High-res internal trace</span><span class="badge">Auto 2–12 colours</span><span class="badge">No circle overlays</span>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h3>1. Upload</h3>
+      <div class="sub">JPG / PNG / WebP / garment crop / scan / motif.</div>
+      <div class="upload"><input id="file" type="file" accept="image/*"><strong>📷 Image choose karo</strong><span class="sub">Tap to upload</span></div>
+      <div class="preview" id="original"><div class="empty">Original image yahan dikhegi</div></div>
+      <div class="stats">
+        <div class="stat"><b id="dim">—</b><span>Original</span></div>
+        <div class="stat"><b id="size">—</b><span>File</span></div>
+        <div class="stat"><b id="modeStat">Printer Match</b><span>Mode</span></div>
+        <div class="stat"><b id="colorStat">Auto</b><span>Colours</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>2. Vector Engine</h3>
+      <div class="sub">Aapke comparison sample ke liye default mode: <b>Printer Match</b>.</div>
+
+      <div class="presetbar" id="presets">
+        <button class="preset active" data-preset="printer">Printer Match</button>
+        <button class="preset" data-preset="textile">Textile Solid</button>
+        <button class="preset" data-preset="sharp">Sharp Motif</button>
+        <button class="preset" data-preset="detail">Fine Detail</button>
+        <button class="preset" data-preset="scan">Scan Rescue</button>
+      </div>
+
+      <div class="fields">
+        <div class="field"><label>Target colours</label>
+          <select id="colors"><option value="auto" selected>Auto Detect</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option><option>12</option><option>16</option><option>24</option></select>
+        </div>
+        <div class="field"><label>Internal quality</label>
+          <select id="quality"><option value="1600">Fast</option><option value="2400" selected>High</option><option value="3200">Ultra</option><option value="4000">Max</option></select>
+        </div>
+      </div>
+
+      <div class="fields">
+        <div class="range"><div class="rangehead"><span>Lighting normalize</span><b id="levelsV">54</b></div><input id="levels" type="range" min="0" max="100" value="54"></div>
+        <div class="range"><div class="rangehead"><span>Texture cleanup</span><b id="noiseV">34</b></div><input id="noise" type="range" min="0" max="100" value="34"></div>
+        <div class="range"><div class="rangehead"><span>Shape cleanup</span><b id="solidV">46</b></div><input id="solid" type="range" min="0" max="100" value="46"></div>
+        <div class="range"><div class="rangehead"><span>Curve precision</span><b id="curveV">94</b></div><input id="curve" type="range" min="10" max="100" value="94"></div>
+      </div>
+
+      <label class="toggle"><input id="supersample" type="checkbox" checked>Up to 2× sampling — quality limit ke andar</label>
+      <div class="sub">Original dots trace hote hain; extra circles add nahi hote.</div>
+      <label class="toggle"><input id="magic" type="checkbox" checked disabled>Magic Wand Friendly exact solid RGB — always ON</label>
+
+      <div class="penFixBox">
+        <div class="penFixHead"><div><b>✒ Pen Tool Shape Fix</b><span>Smooth natural geometry, fewer rough anchor points</span></div><input id="penFix" type="checkbox" checked></div>
+        <div class="range penRange"><div class="rangehead"><span>Pen curve smooth</span><b id="penStrengthV">62</b></div><input id="penStrength" type="range" min="0" max="100" value="62"></div>
+        <label class="toggle"><input id="protectDetails" type="checkbox" checked>Small dots / thin details protect karo</label>
+        <div class="sub">Clean Solid shape lock rahegi. Final SVG trace se pehle boundary ko high-resolution sub-pixel grid par fit kiya jayega.</div>
+        <div class="vectorGraphToggles">
+          <label class="toggle"><input id="adaptiveFair" type="checkbox" checked>Adaptive curve fairing — weak/jagged edge ko hi simplify karo</label>
+          <label class="toggle"><input id="autoSymmetry" type="checkbox" checked>Auto symmetry assist — sirf high-confidence mirror design par</label>
+          <label class="toggle"><input id="perfectCircles" type="checkbox">Perfect dots / circles — near-round shapes ko true circle fit karo</label>
+          <label class="toggle"><input id="gapFiller" type="checkbox" checked>Micro gap filler — SVG white hairline seams hide karo</label>
+          <label class="toggle"><input id="exactPalette" type="checkbox" checked>Exact palette lock — original JPG ke dominant colours preserve karo</label>
+          <label class="toggle"><input id="sharedBoundary" type="checkbox" checked>Shared boundary trace — touching colours ko same edge grid se trace karo</label>
+          <label class="toggle"><input id="microProtect" type="checkbox" checked>Micro-detail guard — small dots / thin motifs smoothing se protect karo</label>
+          <label class="toggle"><input id="smartAutoColors" type="checkbox" checked>Smart Auto Colours — 2–10 colours me best elbow count choose karo</label>
+        </div>
+        <div class="sub vectorGraphNote">Core v5.3: exact palette lock + shared-edge tracing + adaptive fairing + symmetry + micro-detail guard + HQ sub-pixel trace. Proprietary AI model copy nahi kiya gaya.</div>
+      </div>
+
+      <label class="toggle"><input id="transparent" type="checkbox">Background transparent</label>
+
+      <div class="fields" id="bgFields" style="display:none">
+        <div class="field"><label>Background colour</label><input id="bgColor" type="color" value="#ffffff"></div>
+        <div class="range"><div class="rangehead"><span>BG tolerance</span><b id="bgTolV">18</b></div><input id="bgTol" type="range" min="0" max="100" value="18"></div>
+      </div>
+
+      <div class="actions"><button class="btn primary" id="convertBtn" disabled>Printer Match Vectorize</button><button class="btn" id="resetBtn">Reset</button></div>
+      <div class="status" id="status">Image upload kijiye.</div>
+    </section>
+  </div>
+
+  <section class="card section">
+    <h3>3. Original → Sharp Clean Solid → Shape-Locked Vector</h3>
+
+    <div class="liveCompareBar">
+      <button class="btn liveLensBtn" id="liveLensBtn" disabled>🔍 Live Compare Lens</button>
+      <div class="field liveModeField">
+        <label>Lens compare</label>
+        <select id="liveCompareMode">
+          <option value="original-vector">Original ↔ Vector</option>
+          <option value="clean-vector">Clean Solid ↔ Vector</option>
+        </select>
+      </div>
+      <div class="range liveZoomField">
+        <div class="rangehead"><span>Lens zoom</span><b id="liveZoomV">2.8×</b></div>
+        <input id="liveZoom" type="range" min="150" max="500" step="10" value="280">
+      </div>
+    </div>
+
+    <div class="liveStage" id="liveStage" hidden>
+      <div class="liveBase" id="liveBase"></div>
+      <div class="compareLens" id="compareLens">
+        <div class="lensLayer lensSource" id="lensSource"></div>
+        <div class="lensLayer lensOutput" id="lensOutput"></div>
+        <div class="lensDivider"></div>
+        <span class="lensTag lensTagLeft" id="lensTagLeft">ORIGINAL</span>
+        <span class="lensTag lensTagRight">VECTOR</span>
+      </div>
+      <div class="liveHint">Finger se lens ko design ke kisi bhi edge par drag karo. Left = source, right = vector output.</div>
+    </div>
+
+    <div class="compare">
+      <div><div class="label">ORIGINAL</div><div class="preview" id="cmpOriginal"><div class="empty">Upload image</div></div></div>
+      <div><div class="label">CLEAN SOLID</div><div class="preview" id="cleanPreview"><div class="empty">Vectorize dabao</div></div></div>
+      <div><div class="label">VECTOR SVG</div><div class="preview" id="vectorPreview"><div class="empty">Vector result</div></div></div>
+    </div>
+  </section>
+
+  <section class="card section">
+    <h3>4. Palette</h3>
+    <div class="sub">Colour par tap karo — selected ink ka high-sharp edge view turant khulega.</div>
+    <div class="palette" id="palette"><span class="sub">Result ke baad palette aayegi.</span></div>
+    <div class="paletteToolbar" id="paletteToolbar">
+      <button class="palTool" id="palOriginal" disabled>Original</button>
+      <button class="palTool active" id="palOutput" disabled>Output</button>
+      <button class="palTool" id="merge" disabled>Merge</button>
+      <button class="palTool" id="splitInk" disabled>Split</button>
+      <button class="palTool" id="editInk" disabled>Edit</button>
+    </div>
+    <div class="paletteHint" id="paletteHint">Colour select karne ke baad Output me sharp vector separation dikhegi.</div>
+    <div class="actions"><button class="btn" id="rebuild" disabled>Rebuild SVG</button></div>
+  </section>
+
+  <section class="card section" id="inkPanel" hidden>
+<div class="inkHead"><div><h3>High Sharp Edge · <span id="inkName"></span></h3><div class="sub" id="inkCoverage"></div></div><span class="sharpBadge">VECTOR EDGE</span></div>
+<label class="toggle"><input type="checkbox" id="hideOtherInks">Baaki colours hide karo</label>
+<div class="fields"><div class="field"><label for="inkEdit">Selected colour edit</label><input id="inkEdit" type="color"></div>
+<div class="field"><label for="inkZoom">Preview zoom <span id="inkZoomLabel">100%</span></label><input id="inkZoom" type="range" min="100" max="800" step="25" value="100"><button class="btn" id="inkFit">Fit view</button></div></div>
+<div id="inkPreview" class="inkPreview"></div>
+<label class="toggle"><input id="hardInk" type="checkbox" checked>Hard-edge PNG — exact solid RGB, no blended edge pixels</label>
+<div class="sub">Downloads sirf selected colour ke hain; baaki area transparent. Colour PNG bhi Output section me selected 2K / 4K / 6K resolution par export hoga. SVG vector edges rakhta hai.</div>
+<div class="actions"><button class="btn primary" id="inkPng">Download colour PNG</button><button class="btn" id="inkSvg">Download colour SVG</button></div>
+</section>
+  <section class="card section">
+    <h3>5. Output</h3>
+    <div class="stats">
+      <div class="stat"><b id="pathCount">—</b><span>Paths</span></div>
+      <div class="stat"><b id="svgSize">—</b><span>SVG size</span></div>
+      <div class="stat"><b id="outColors">—</b><span>Colours</span></div>
+      <div class="stat"><b id="processTime">—</b><span>Time</span></div>
+    </div>
+    <div class="fields exportFields">
+      <div class="field"><label>PNG export resolution</label>
+        <select id="pngResolution"><option value="2048">2K — Fast</option><option value="4096" selected>4K — Sharp</option><option value="6000">6K — Print</option></select>
+      </div>
+      <label class="toggle exportToggle"><input id="hardMainPng" type="checkbox" checked>Hard-edge PNG — exact palette RGB</label>
+    </div>
+    <div class="sub">Preview SVG hota hai isliye zoom par sharp dikhta hai. Ab PNG bhi selected high resolution par render hoga — low-resolution trace size par nahi.</div>
+    <div class="downloadgrid"><button class="btn primary" id="svgBtn" disabled>⬇ Download SVG</button><button class="btn good" id="pngBtn" disabled>🖼 Download Sharp PNG</button><button class="btn" id="copyBtn" disabled>Copy SVG Code</button></div>
+    <div class="note"><b>Target:</b> original motif ko preserve karke rough/jagged edges ko Pen Tool jaisi natural Bézier geometry me smooth karna. Small details protect mode ON rakhein; software unseen motif invent nahi karega.</div>
+  </section>
+
+  <div class="footer">Vector Converter Pro v5.3 • Vector Graph Core + Live Lens Build • Altaf Designer</div>
+</div>
+<script src="./imagetracer_v1.2.6.js"></script>
+<script src="./v53.js"></script>
+<script src="./separation53.js"></script>
+<script src="./livecompare53.js"></script>
+</body>
+</html>
