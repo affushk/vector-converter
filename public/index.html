@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070a0f">
-<title>Altaf Textile Designer — Textile Vector Studio</title>
-<link rel="stylesheet" href="./v57.css">
+<title>Altaf Textile Designer v5.8 — Theme & Font</title>
+<link rel="stylesheet" href="./v58.css">
 <meta name="application-name" content="Altaf Textile Designer">
 <meta name="apple-mobile-web-app-title" content="Altaf Textile Designer">
 <meta name="mobile-web-app-capable" content="yes">
@@ -16,17 +16,20 @@
 <div class="app">
   <header class="top">
     <div class="brand"><div class="logo">ATD</div><div><h1>Altaf Textile Designer</h1><small>Textile Vector Studio • Photoshop Ready • Altaf Textile Designer</small></div></div>
-    <button class="btn primary desktopOnly" id="topSvg" disabled>Photoshop SVG</button>
+    <div class="topActions">
+      <button class="styleJump" id="styleJump" type="button" aria-label="Open theme and font settings">Aa</button>
+      <button class="btn primary desktopOnly" id="topSvg" disabled>Photoshop SVG</button>
+    </div>
   </header>
 
-  <section class="styleDock card">
+  <section class="styleDock card" id="styleDock">
     <div class="styleDockHead">
-      <div><b>Style</b><span>Minimal theme + font</span></div>
+      <div><b>🎨 Theme & Font</b><span>Look yahan se change karo</span></div>
       <button class="styleReset" id="styleReset" type="button">Reset</button>
     </div>
     <div class="styleControls">
       <div class="field">
-        <label for="themeStyle">Theme style</label>
+        <label for="themeStyle">Theme</label>
         <select id="themeStyle">
           <option value="premium" selected>Premium Dark</option>
           <option value="minimal">Minimal Dark</option>
@@ -35,7 +38,7 @@
         </select>
       </div>
       <div class="field">
-        <label for="fontStyle">Font style</label>
+        <label for="fontStyle">Font</label>
         <select id="fontStyle">
           <option value="modern" selected>Modern Sans</option>
           <option value="elegant">Elegant</option>
@@ -218,12 +221,12 @@
     <div class="note"><b>Target:</b> original motif ko preserve karke rough/jagged edges ko Pen Tool jaisi natural Bézier geometry me smooth karna. Small details protect mode ON rakhein; software unseen motif invent nahi karega.</div>
   </section>
 
-  <div class="footer">Altaf Textile Designer • Minimal Themes + Font Styles • v5.7</div>
+  <div class="footer">Altaf Textile Designer • Theme Switcher + Font Styles • v5.8</div>
 </div>
 <script src="./imagetracer_v1.2.6.js"></script>
-<script src="./v57.js"></script>
-<script src="./separation57.js"></script>
-<script src="./livecompare57.js"></script>
-<script src="./motion57.js"></script>
+<script src="./v58.js"></script>
+<script src="./separation58.js"></script>
+<script src="./livecompare58.js"></script>
+<script src="./motion58.js"></script>
 </body>
 </html>
