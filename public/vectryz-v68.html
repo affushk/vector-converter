@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070a0f">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Vectryz by Altaf v6.8 — PC Studio</title>
+<link rel="stylesheet" href="./v68.css?v=68a">
+<meta name="application-name" content="Vectryz by Altaf">
+<meta name="apple-mobile-web-app-title" content="Vectryz by Altaf">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.webmanifest">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="logo">VA</div><div><h1>Vectryz by Altaf</h1><small>Textile Vector Studio • Photoshop Ready</small></div></div>
+    <div class="topActions">
+      <button class="styleJump" id="styleJump" type="button" aria-label="Open theme and font settings">Aa</button>
+      <button class="btn primary desktopOnly" id="topSvg" disabled>Photoshop SVG</button>
+    </div>
+  </header>
+
+  <section class="styleDock card" id="styleDock">
+    <div class="styleDockHead">
+      <div><b>🎨 Theme & Font</b><span>Look yahan se change karo</span></div>
+      <button class="styleReset" id="styleReset" type="button">Reset</button>
+    </div>
+    <div class="styleControls">
+      <div class="field">
+        <label for="themeStyle">Theme</label>
+        <select id="themeStyle">
+          <option value="premium" selected>Premium Dark</option>
+          <option value="minimal">Minimal Dark</option>
+          <option value="light">Minimal Light</option>
+          <option value="amoled">AMOLED Black</option>
+          <option value="soft">Soft Graphite</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fontStyle">Font</label>
+        <select id="fontStyle">
+          <option value="modern" selected>Modern Sans</option>
+          <option value="elegant">Elegant</option>
+          <option value="rounded">Rounded</option>
+          <option value="compact">Compact Pro</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero">
+    <h2><span>Smart Textile</span> Vector Studio</h2>
+    <p>JPG / PNG se clean solid artwork, shape-locked vector, live compare, colour separation aur Photoshop-ready SVG/EPS — sab ek premium textile workflow me.</p>
+    <span class="badge">Textile Pro Auto</span><span class="badge">Photoshop Ready</span><span class="badge">Live Vector Lens</span><span class="badge">Exact Solid RGB</span>
+  </section>
+
+  <section class="processHud card" id="processHud" aria-live="polite">
+    <div class="processHudTop">
+      <div class="processIdentity">
+        <div class="processOrb" id="processOrb"><span></span></div>
+        <div>
+          <b id="liveTitle">Ready</b>
+          <span id="liveText">Image choose kijiye — Auto Vectorize turant start hoga.</span>
+        </div>
+      </div>
+      <strong id="livePercent">0%</strong>
+    </div>
+    <div class="liveProgressTrack"><div class="liveProgressFill" id="liveProgressFill"></div></div>
+    <div class="liveSteps" id="liveSteps">
+      <div class="liveStep active" data-step="0"><i>1</i><span>Upload</span></div>
+      <div class="liveStep" data-step="1"><i>2</i><span>Prepare</span></div>
+      <div class="liveStep" data-step="2"><i>3</i><span>Colours</span></div>
+      <div class="liveStep" data-step="3"><i>4</i><span>Clean</span></div>
+      <div class="liveStep" data-step="4"><i>5</i><span>Vector</span></div>
+      <div class="liveStep" data-step="5"><i>✓</i><span>Ready</span></div>
+    </div>
+  </section>
+
+  <div class="grid pcWorkspace">
+    <section class="card">
+      <h3>1. Upload</h3>
+      <div class="sub">JPG / PNG / WebP / garment crop / scan / motif.</div>
+      <div class="autoVectorNote">⚡ Robust Decode + Auto Vectorize ON — image ready hote hi processing khud start hogi.</div>
+      <div class="upload"><input id="file" type="file" accept="image/*"><strong>📷 Image choose karo</strong><span class="sub">Tap to upload</span></div>
+      <div class="pasteTools">
+        <button class="btn pasteBtn" id="pasteBtn" type="button">📋 Paste Image</button>
+        <div class="pasteHint"><kbd>Ctrl</kbd> + <kbd>V</kbd><span>Copy ki hui image direct paste karo</span></div>
+      </div>
+      <div class="uploadPreviewShell">
+        <div class="preview" id="original"><div class="empty">Original image yahan dikhegi</div></div>
+        <div class="uploadLiveOverlay" id="uploadLiveOverlay" hidden>
+          <div class="uploadSpinner"><span></span></div>
+          <b id="uploadLiveTitle">Reading image…</b>
+          <span id="uploadLiveText">Preview prepare ho raha hai</span>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="dim">—</b><span>Original</span></div>
+        <div class="stat"><b id="size">—</b><span>File</span></div>
+        <div class="stat"><b id="modeStat">Printer Match</b><span>Mode</span></div>
+        <div class="stat"><b id="colorStat">Auto</b><span>Colours</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>2. Vector Engine</h3>
+      <div class="sub">Default profile: <b>Textile Pro Auto</b> — manual setting change ki zarurat minimum rakhi gayi hai.</div>
+
+      <div class="presetbar" id="presets">
+        <button class="preset active" data-preset="printer">Textile Pro Auto</button>
+        <button class="preset" data-preset="textile">Textile Solid</button>
+        <button class="preset" data-preset="sharp">Sharp Motif</button>
+        <button class="preset" data-preset="detail">Fine Detail</button>
+        <button class="preset" data-preset="scan">Scan Rescue</button>
+      </div>
+
+      <div class="fields">
+        <div class="field"><label>Target colours</label>
+          <select id="colors"><option value="auto" selected>Auto Detect</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option><option>12</option><option>16</option><option>24</option></select>
+        </div>
+        <div class="field"><label>Internal quality</label>
+          <select id="quality"><option value="1600">Fast</option><option value="2400" selected>High</option><option value="3200">Ultra</option><option value="4000">Max</option></select>
+        </div>
+      </div>
+
+      <div class="fields">
+        <div class="range"><div class="rangehead"><span>Lighting normalize</span><b id="levelsV">54</b></div><input id="levels" type="range" min="0" max="100" value="54"></div>
+        <div class="range"><div class="rangehead"><span>Texture cleanup</span><b id="noiseV">34</b></div><input id="noise" type="range" min="0" max="100" value="34"></div>
+        <div class="range"><div class="rangehead"><span>Shape cleanup</span><b id="solidV">46</b></div><input id="solid" type="range" min="0" max="100" value="46"></div>
+        <div class="range"><div class="rangehead"><span>Curve precision</span><b id="curveV">94</b></div><input id="curve" type="range" min="10" max="100" value="94"></div>
+      </div>
+
+      <label class="toggle"><input id="supersample" type="checkbox" checked>Up to 2× sampling — quality limit ke andar</label>
+      <div class="sub">Original dots trace hote hain; extra circles add nahi hote.</div>
+      <label class="toggle"><input id="magic" type="checkbox" checked disabled>Magic Wand Friendly exact solid RGB — always ON</label>
+
+      <div class="penFixBox">
+        <div class="penFixHead"><div><b>✒ Safe Shape Lock + Reliable Auto</b><span>Exact silhouette first • only conservative curve smoothing • no polygon drift</span></div><input id="penFix" type="checkbox" checked></div>
+        <div class="range penRange"><div class="rangehead"><span>Pen curve smooth</span><b id="penStrengthV">62</b></div><input id="penStrength" type="range" min="0" max="100" value="62"></div>
+        <label class="toggle"><input id="protectDetails" type="checkbox" checked>Small dots / thin details protect karo</label>
+        <div class="sub">Clean Solid shape lock rahegi. High-resolution contour ke stair-step pixels clean karke SVG curve ko Pen Tool jaisi smooth Bézier geometry me fit kiya jayega.</div>
+        <div class="vectorGraphToggles">
+          <label class="toggle"><input id="adaptiveFair" type="checkbox" checked>Adaptive curve fairing — weak/jagged edge ko hi simplify karo</label>
+          <label class="toggle"><input id="autoSymmetry" type="checkbox" checked>Auto symmetry assist — sirf high-confidence mirror design par</label>
+          <label class="toggle"><input id="perfectCircles" type="checkbox">Perfect dots / circles — near-round shapes ko true circle fit karo</label>
+          <label class="toggle"><input id="gapFiller" type="checkbox" checked>Micro gap filler — SVG white hairline seams hide karo</label>
+          <label class="toggle"><input id="exactPalette" type="checkbox" checked>Exact palette lock — original JPG ke dominant colours preserve karo</label>
+          <label class="toggle"><input id="sharedBoundary" type="checkbox" checked>Shared boundary trace — touching colours ko same edge grid se trace karo</label>
+          <label class="toggle"><input id="microProtect" type="checkbox" checked>Micro-detail guard — small dots / thin motifs smoothing se protect karo</label>
+          <label class="toggle"><input id="smartAutoColors" type="checkbox" checked>Smart Auto Colours — 2–10 colours me best elbow count choose karo</label>
+          <label class="toggle"><input id="flatColorLock" type="checkbox" checked>Flat Color Lock — palette sirf solid interior pixels se lo</label>
+          <label class="toggle"><input id="antiAliasReject" type="checkbox" checked>Anti-Alias Reject — edge blend / JPG halo ko colour count me mat lo</label>
+        </div>
+        <div class="sub vectorGraphNote">TEXTILE PRO AUTO default: Auto colours + Flat Color Lock + Anti-Alias Reject + Exact Palette + Shared Boundaries + Micro-detail Guard + HQ Trace. Bas image upload karke Vectorize dabao.</div>
+      </div>
+
+      <label class="toggle"><input id="transparent" type="checkbox">Background transparent</label>
+
+      <div class="fields" id="bgFields" style="display:none">
+        <div class="field"><label>Background colour</label><input id="bgColor" type="color" value="#ffffff"></div>
+        <div class="range"><div class="rangehead"><span>BG tolerance</span><b id="bgTolV">18</b></div><input id="bgTol" type="range" min="0" max="100" value="18"></div>
+      </div>
+
+      <div class="actions"><button class="btn primary" id="convertBtn" disabled>Vectorize / Re-run</button><button class="btn" id="resetBtn">Reset</button></div>
+      <div class="status" id="status">Image upload kijiye.</div>
+    </section>
+  </div>
+
+  <section class="card section resultStudio">
+    <div class="resultHead">
+      <div>
+        <h3>3. Original → Sharp Clean Solid → Shape-Locked Vector</h3>
+        <span>PC par large preview ke liye Focus Vector use karein.</span>
+      </div>
+      <button class="btn focusBtn" id="focusVectorBtn" disabled>⛶ Focus Vector</button>
+    </div>
+
+    <div class="liveCompareBar">
+      <button class="btn liveLensBtn" id="liveLensBtn" disabled>🔍 Live Compare Lens</button>
+      <div class="field liveModeField">
+        <label>Lens compare</label>
+        <select id="liveCompareMode">
+          <option value="original-vector">Original ↔ Vector</option>
+          <option value="clean-vector">Clean Solid ↔ Vector</option>
+        </select>
+      </div>
+      <div class="range liveZoomField">
+        <div class="rangehead"><span>Lens zoom</span><b id="liveZoomV">2.8×</b></div>
+        <input id="liveZoom" type="range" min="150" max="500" step="10" value="280">
+      </div>
+    </div>
+
+    <div class="liveStage" id="liveStage" hidden>
+      <div class="liveBase" id="liveBase"></div>
+      <div class="compareLens" id="compareLens">
+        <div class="lensLayer lensSource" id="lensSource"></div>
+        <div class="lensLayer lensOutput" id="lensOutput"></div>
+        <div class="lensDivider"></div>
+        <span class="lensTag lensTagLeft" id="lensTagLeft">ORIGINAL</span>
+        <span class="lensTag lensTagRight">VECTOR</span>
+      </div>
+      <div class="liveHint">Finger se lens ko design ke kisi bhi edge par drag karo. Left = source, right = vector output.</div>
+    </div>
+
+    <div class="compare">
+      <div><div class="label">ORIGINAL</div><div class="preview" id="cmpOriginal"><div class="empty">Upload image</div></div></div>
+      <div><div class="label">CLEAN SOLID</div><div class="preview" id="cleanPreview"><div class="empty">Vectorize dabao</div></div></div>
+      <div><div class="label">VECTOR SVG</div><div class="preview" id="vectorPreview"><div class="empty">Vector result</div></div></div>
+    </div>
+  </section>
+
+  <section class="card section">
+    <h3>4. Palette</h3>
+    <div class="sub">Colour par tap karo — selected ink ka high-sharp edge view turant khulega.</div>
+    <div class="palette" id="palette"><span class="sub">Result ke baad palette aayegi.</span></div>
+    <div class="paletteToolbar" id="paletteToolbar">
+      <button class="palTool" id="palOriginal" disabled>Original</button>
+      <button class="palTool active" id="palOutput" disabled>Output</button>
+      <button class="palTool" id="merge" disabled>Merge</button>
+      <button class="palTool" id="splitInk" disabled>Split</button>
+      <button class="palTool" id="editInk" disabled>Edit</button>
+    </div>
+    <div class="paletteHint" id="paletteHint">Colour select karne ke baad Output me sharp vector separation dikhegi.</div>
+    <div class="actions"><button class="btn" id="rebuild" disabled>Rebuild SVG</button></div>
+  </section>
+
+  <section class="card section" id="inkPanel" hidden>
+<div class="inkHead"><div><h3>High Sharp Edge · <span id="inkName"></span></h3><div class="sub" id="inkCoverage"></div></div><span class="sharpBadge">VECTOR EDGE</span></div>
+<label class="toggle"><input type="checkbox" id="hideOtherInks">Baaki colours hide karo</label>
+<div class="fields"><div class="field"><label for="inkEdit">Selected colour edit</label><input id="inkEdit" type="color"></div>
+<div class="field"><label for="inkZoom">Preview zoom <span id="inkZoomLabel">100%</span></label><input id="inkZoom" type="range" min="100" max="800" step="25" value="100"><button class="btn" id="inkFit">Fit view</button></div></div>
+<div id="inkPreview" class="inkPreview"></div>
+<label class="toggle"><input id="hardInk" type="checkbox" checked>Hard-edge PNG — exact solid RGB, no blended edge pixels</label>
+<div class="sub">Downloads sirf selected colour ke hain; baaki area transparent. Colour PNG bhi Output section me selected 2K / 4K / 6K resolution par export hoga. SVG vector edges rakhta hai.</div>
+<div class="actions"><button class="btn primary" id="inkPng">Download colour PNG</button><button class="btn" id="inkSvg">Download colour SVG</button></div>
+</section>
+  <section class="card section">
+    <h3>5. Output</h3>
+    <div class="stats">
+      <div class="stat"><b id="pathCount">—</b><span>Paths</span></div>
+      <div class="stat"><b id="svgSize">—</b><span>SVG size</span></div>
+      <div class="stat"><b id="outColors">—</b><span>Colours</span></div>
+      <div class="stat"><b id="processTime">—</b><span>Time</span></div>
+    </div>
+    <div class="fields exportFields">
+      <div class="field"><label>PNG export resolution</label>
+        <select id="pngResolution"><option value="2048">2K — Fast</option><option value="4096" selected>4K — Sharp</option><option value="6000">6K — Print</option></select>
+      </div>
+      <label class="toggle exportToggle"><input id="hardMainPng" type="checkbox" checked>Hard-edge PNG — exact palette RGB</label>
+    </div>
+    <div class="sub">Preview SVG hota hai isliye zoom par sharp dikhta hai. Ab PNG bhi selected high resolution par render hoga — low-resolution trace size par nahi.</div>
+    <div class="downloadgrid photoshopGrid">
+  <button class="btn primary" id="psSvgBtn" disabled>⬇ Photoshop SVG 1.1</button>
+  <button class="btn" id="epsBtn" disabled>⬇ Photoshop CS6 EPS</button>
+  <button class="btn" id="svgBtn" disabled>⬇ Standard SVG</button>
+  <button class="btn good" id="pngBtn" disabled>🖼 Download Sharp PNG</button>
+  <button class="btn" id="copyBtn" disabled>Copy SVG Code</button>
+</div>
+<div class="note psNote"><b>Photoshop:</b> New Photoshop ke liye “Photoshop SVG 1.1”. Photoshop CS6 me SVG direct open na ho to “Photoshop CS6 EPS” use karo; EPS open/place hoga aur Photoshop resolution choose karne dega.</div>
+    <div class="note"><b>Target:</b> original motif ko preserve karke rough/jagged edges ko Pen Tool jaisi natural Bézier geometry me smooth karna. Small details protect mode ON rakhein; software unseen motif invent nahi karega.</div>
+  </section>
+
+  <div class="focusOverlay" id="focusOverlay" hidden>
+    <div class="focusTop">
+      <div><b>Vectryz Focus Preview</b><span>Esc ya Close se wapas aayein</span></div>
+      <button class="btn" id="closeFocusBtn">✕ Close</button>
+    </div>
+    <div class="focusCanvas" id="focusCanvas"></div>
+  </div>
+
+  <div class="footer">Vectryz by Altaf • PC Studio v6.8</div>
+</div>
+<script src="./imagetracer_v1.2.6.js"></script>
+<script src="./v68.js?v=68a"></script>
+<script src="./separation68.js?v=68a"></script>
+<script src="./livecompare68.js?v=68a"></script>
+<script src="./motion68.js?v=68a"></script>
+</body>
+</html>
