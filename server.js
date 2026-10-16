@@ -323,7 +323,7 @@ app.get('/api/admin/users', auth, ownerOnly, (req, res) => {
   res.json({ users });
 });
 
-app.get('/api/health', (req, res) => res.json({ ok: true, paymentsEnabled: Boolean(RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) }));
+app.get('/api/health', (req, res) => res.json({ ok: true, paymentsEnabled: Boolean(RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET), vectorizerEnabled: Boolean(VECTORIZER_API_ID && VECTORIZER_API_SECRET), vectorizerMode: VECTORIZER_MODE }));
 app.get('/secure', (req, res) => res.sendFile(path.join(__dirname, 'public', 'vectryz-v69-secure.html')));
 
 app.use(express.static(path.join(__dirname, 'public')));
