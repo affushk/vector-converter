@@ -190,12 +190,21 @@ app.post('/api/payments/verify', express.json(), auth, async (req, res) => {
     const paymentRes = await fetch('https://api.razorpay.com/v1/payments/' + encodeURIComponent(paymentId), {
       headers: { authorization: razorpayAuth() }
     });
-    const payment = await paymentRes.json();
+    let payment = await paymentRes.json();
     if (!paymentRes.ok) return res.status(502).json({ error: 'Could not confirm payment' });
     if (payment.order_id !== orderId || Number(payment.amount) !== PRO_PRICE_PAISE || payment.currency !== 'INR') {
       return res.status(400).json({ error: 'Payment amount/order mismatch' });
     }
     if (!['authorized', 'captured'].includes(payment.status)) return res.status(400).json({ error: 'Payment is not successful yet' });
+    if (payment.status === 'authorized') {
+      const captureRes = await fetch('https://api.razorpay.com/v1/payments/' + encodeURIComponent(paymentId) + '/capture', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: razorpayAuth() },
+        body: JSON.stringify({ amount: PRO_PRICE_PAISE, currency: 'INR' })
+      });
+      payment = await captureRes.json();
+      if (!captureRes.ok || payment.status !== 'captured') return res.status(502).json({ error: 'Payment could not be captured' });
+    }
 
     const db = readDb();
     if (!db.users[req.auth.email]) return res.status(404).json({ error: 'Account not found' });
