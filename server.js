@@ -1,7 +1,235 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+
 const app = express();
+const PORT = process.env.PORT || 3000;
+const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data', 'users.json');
+const SESSION_SECRET = process.env.SESSION_SECRET || 'CHANGE_ME_BEFORE_PRODUCTION_' + crypto.createHash('sha256').update(__dirname).digest('hex');
+const OWNER_EMAIL = String(process.env.OWNER_EMAIL || '').trim().toLowerCase();
+const RAZORPAY_KEY_ID = String(process.env.RAZORPAY_KEY_ID || '').trim();
+const RAZORPAY_KEY_SECRET = String(process.env.RAZORPAY_KEY_SECRET || '').trim();
+const PRO_PRICE_PAISE = Math.max(100, Number(process.env.PRO_PRICE_PAISE || 19900));
+const PRO_DAYS = Math.max(1, Number(process.env.PRO_DAYS || 30));
+
+function ensureDb() {
+  const dir = path.dirname(DATA_FILE);
+  fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify({ users: {}, payments: {} }, null, 2));
+}
+function readDb() {
+  ensureDb();
+  try {
+    const db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    db.users ||= {};
+    db.payments ||= {};
+    return db;
+  } catch {
+    return { users: {}, payments: {} };
+  }
+}
+function writeDb(db) {
+  ensureDb();
+  const tmp = DATA_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
+  fs.renameSync(tmp, DATA_FILE);
+}
+function normalizeEmail(v) { return String(v || '').trim().toLowerCase(); }
+function b64url(v) { return Buffer.from(v).toString('base64url'); }
+function signToken(email) {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = { email, iat: now, exp: now + 60 * 60 * 24 * 30 };
+  const body = b64url(JSON.stringify(payload));
+  const sig = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
+  return body + '.' + sig;
+}
+function verifyToken(token) {
+  if (!token || !token.includes('.')) return null;
+  const [body, sig] = token.split('.');
+  const expected = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
+  if (!sig || sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+  const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+  if (!payload.email || !payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
+  return payload;
+}
+function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+  const hash = crypto.scryptSync(String(password), salt, 64).toString('hex');
+  return { salt, hash };
+}
+function safeUser(email, row) {
+  const now = Date.now();
+  const expires = Number(row.proExpiresAt || 0);
+  const role = OWNER_EMAIL && email === OWNER_EMAIL ? 'owner' : (expires > now ? 'pro' : 'free');
+  return {
+    email,
+    role,
+    proExpiresAt: role === 'owner' ? null : (expires || null),
+    createdAt: row.createdAt || null
+  };
+}
+function auth(req, res, next) {
+  const header = String(req.headers.authorization || '');
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  try {
+    const payload = verifyToken(token);
+    if (!payload) return res.status(401).json({ error: 'Login required' });
+    const db = readDb();
+    const row = db.users[payload.email];
+    if (!row) return res.status(401).json({ error: 'Account not found' });
+    req.auth = { email: payload.email, row, db, user: safeUser(payload.email, row) };
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid session' });
+  }
+}
+function ownerOnly(req, res, next) {
+  if (req.auth?.user?.role !== 'owner') return res.status(403).json({ error: 'Owner access required' });
+  next();
+}
+const authAttempts = new Map();
+function authLimit(req, res, next) {
+  const key = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const item = authAttempts.get(key) || { start: now, count: 0 };
+  if (now - item.start > 10 * 60 * 1000) { item.start = now; item.count = 0; }
+  item.count++;
+  authAttempts.set(key, item);
+  if (item.count > 40) return res.status(429).json({ error: 'Too many attempts. Try again later.' });
+  next();
+}
+function razorpayAuth() {
+  return 'Basic ' + Buffer.from(RAZORPAY_KEY_ID + ':' + RAZORPAY_KEY_SECRET).toString('base64');
+}
+
+app.post('/api/register', express.json(), authLimit, (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const password = String(req.body?.password || '');
+  if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: 'Valid email required' });
+  if (password.length < 8) return res.status(400).json({ error: 'Password minimum 8 characters' });
+  const db = readDb();
+  if (db.users[email]) return res.status(409).json({ error: 'Account already exists' });
+  const hp = hashPassword(password);
+  db.users[email] = { salt: hp.salt, passwordHash: hp.hash, proExpiresAt: 0, createdAt: new Date().toISOString() };
+  writeDb(db);
+  res.json({ token: signToken(email), user: safeUser(email, db.users[email]) });
+});
+
+app.post('/api/login', express.json(), authLimit, (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const password = String(req.body?.password || '');
+  const db = readDb();
+  const row = db.users[email];
+  if (!row) return res.status(401).json({ error: 'Email or password incorrect' });
+  const hp = hashPassword(password, row.salt);
+  const a = Buffer.from(hp.hash, 'hex');
+  const b = Buffer.from(row.passwordHash || '', 'hex');
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(401).json({ error: 'Email or password incorrect' });
+  res.json({ token: signToken(email), user: safeUser(email, row) });
+});
+
+app.get('/api/me', auth, (req, res) => res.json({ user: req.auth.user }));
+
+app.get('/api/config', (req, res) => {
+  res.json({
+    proPricePaise: PRO_PRICE_PAISE,
+    proDays: PRO_DAYS,
+    paymentsEnabled: Boolean(RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET),
+    razorpayKeyId: RAZORPAY_KEY_ID || null
+  });
+});
+
+app.post('/api/payments/create-order', express.json(), auth, async (req, res) => {
+  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) return res.status(503).json({ error: 'Payment gateway is not configured yet' });
+  try {
+    const receipt = 'vectryz_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
+    const response = await fetch('https://api.razorpay.com/v1/orders', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: razorpayAuth() },
+      body: JSON.stringify({
+        amount: PRO_PRICE_PAISE,
+        currency: 'INR',
+        receipt,
+        notes: { product: 'Vectryz Pro', account: req.auth.email, days: String(PRO_DAYS) }
+      })
+    });
+    const order = await response.json();
+    if (!response.ok) return res.status(502).json({ error: order?.error?.description || 'Could not create payment order' });
+    res.json({ orderId: order.id, amount: order.amount, currency: order.currency, keyId: RAZORPAY_KEY_ID });
+  } catch (e) {
+    res.status(502).json({ error: 'Payment service unavailable' });
+  }
+});
+
+app.post('/api/payments/verify', express.json(), auth, async (req, res) => {
+  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) return res.status(503).json({ error: 'Payment gateway is not configured yet' });
+  const orderId = String(req.body?.razorpay_order_id || '');
+  const paymentId = String(req.body?.razorpay_payment_id || '');
+  const signature = String(req.body?.razorpay_signature || '');
+  if (!orderId || !paymentId || !signature) return res.status(400).json({ error: 'Payment details missing' });
+
+  const expected = crypto.createHmac('sha256', RAZORPAY_KEY_SECRET).update(orderId + '|' + paymentId).digest('hex');
+  if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+    return res.status(400).json({ error: 'Payment signature invalid' });
+  }
+
+  try {
+    const paymentRes = await fetch('https://api.razorpay.com/v1/payments/' + encodeURIComponent(paymentId), {
+      headers: { authorization: razorpayAuth() }
+    });
+    const payment = await paymentRes.json();
+    if (!paymentRes.ok) return res.status(502).json({ error: 'Could not confirm payment' });
+    if (payment.order_id !== orderId || Number(payment.amount) !== PRO_PRICE_PAISE || payment.currency !== 'INR') {
+      return res.status(400).json({ error: 'Payment amount/order mismatch' });
+    }
+    if (!['authorized', 'captured'].includes(payment.status)) return res.status(400).json({ error: 'Payment is not successful yet' });
+
+    const db = readDb();
+    if (!db.users[req.auth.email]) return res.status(404).json({ error: 'Account not found' });
+    if (!db.payments[paymentId]) {
+      const current = Math.max(Date.now(), Number(db.users[req.auth.email].proExpiresAt || 0));
+      db.users[req.auth.email].proExpiresAt = current + PRO_DAYS * 24 * 60 * 60 * 1000;
+      db.payments[paymentId] = { email: req.auth.email, orderId, amount: payment.amount, at: new Date().toISOString() };
+      writeDb(db);
+    }
+    res.json({ ok: true, user: safeUser(req.auth.email, db.users[req.auth.email]) });
+  } catch {
+    res.status(502).json({ error: 'Could not verify payment' });
+  }
+});
+
+app.post('/api/admin/grant-pro', express.json(), auth, ownerOnly, (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const days = Math.max(1, Math.min(3650, Number(req.body?.days || 30)));
+  const db = readDb();
+  if (!db.users[email]) return res.status(404).json({ error: 'User must register first' });
+  const current = Math.max(Date.now(), Number(db.users[email].proExpiresAt || 0));
+  db.users[email].proExpiresAt = current + days * 24 * 60 * 60 * 1000;
+  writeDb(db);
+  res.json({ ok: true, user: safeUser(email, db.users[email]) });
+});
+
+app.post('/api/admin/revoke-pro', express.json(), auth, ownerOnly, (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const db = readDb();
+  if (!db.users[email]) return res.status(404).json({ error: 'User not found' });
+  db.users[email].proExpiresAt = 0;
+  writeDb(db);
+  res.json({ ok: true, user: safeUser(email, db.users[email]) });
+});
+
+app.get('/api/admin/users', auth, ownerOnly, (req, res) => {
+  const db = readDb();
+  const users = Object.entries(db.users).map(([email, row]) => safeUser(email, row));
+  res.json({ users });
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
-app.get('*', (req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
-const port = process.env.PORT || 3000;
-app.listen(port, ()=>console.log('Vector Converter Pro running on port '+port));
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+app.listen(PORT, () => {
+  console.log('Vectryz server running on port ' + PORT);
+  if (!OWNER_EMAIL) console.warn('OWNER_EMAIL is not set; no account will receive Owner role.');
+  if (!process.env.SESSION_SECRET) console.warn('SESSION_SECRET is not set; configure it before production.');
+  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) console.warn('Razorpay keys are not set; payments stay disabled.');
+});
