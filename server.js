@@ -16,7 +16,7 @@ const PRO_DAYS = Math.max(1, Number(process.env.PRO_DAYS || 30));
 function ensureDb() {
   const dir = path.dirname(DATA_FILE);
   fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify({ users: {}, payments: {} }, null, 2));
+  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify({ users: {}, payments: {}, orders: {} }, null, 2));
 }
 function readDb() {
   ensureDb();
@@ -24,9 +24,10 @@ function readDb() {
     const db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     db.users ||= {};
     db.payments ||= {};
+    db.orders ||= {};
     return db;
   } catch {
-    return { users: {}, payments: {} };
+    return { users: {}, payments: {}, orders: {} };
   }
 }
 function writeDb(db) {
@@ -155,6 +156,10 @@ app.post('/api/payments/create-order', express.json(), auth, async (req, res) =>
     });
     const order = await response.json();
     if (!response.ok) return res.status(502).json({ error: order?.error?.description || 'Could not create payment order' });
+    const db = readDb();
+    db.orders ||= {};
+    db.orders[order.id] = { email: req.auth.email, amount: Number(order.amount), currency: order.currency, createdAt: new Date().toISOString(), used: false };
+    writeDb(db);
     res.json({ orderId: order.id, amount: order.amount, currency: order.currency, keyId: RAZORPAY_KEY_ID });
   } catch (e) {
     res.status(502).json({ error: 'Payment service unavailable' });
@@ -174,6 +179,14 @@ app.post('/api/payments/verify', express.json(), auth, async (req, res) => {
   }
 
   try {
+    const dbBefore = readDb();
+    const storedOrder = dbBefore.orders?.[orderId];
+    if (!storedOrder || storedOrder.email !== req.auth.email || storedOrder.used) {
+      return res.status(400).json({ error: 'Payment order does not belong to this account or was already used' });
+    }
+    if (Number(storedOrder.amount) !== PRO_PRICE_PAISE || storedOrder.currency !== 'INR') {
+      return res.status(400).json({ error: 'Stored payment order mismatch' });
+    }
     const paymentRes = await fetch('https://api.razorpay.com/v1/payments/' + encodeURIComponent(paymentId), {
       headers: { authorization: razorpayAuth() }
     });
@@ -190,6 +203,8 @@ app.post('/api/payments/verify', express.json(), auth, async (req, res) => {
       const current = Math.max(Date.now(), Number(db.users[req.auth.email].proExpiresAt || 0));
       db.users[req.auth.email].proExpiresAt = current + PRO_DAYS * 24 * 60 * 60 * 1000;
       db.payments[paymentId] = { email: req.auth.email, orderId, amount: payment.amount, at: new Date().toISOString() };
+      db.orders ||= {};
+      if (db.orders[orderId]) db.orders[orderId].used = true;
       writeDb(db);
     }
     res.json({ ok: true, user: safeUser(req.auth.email, db.users[req.auth.email]) });
@@ -223,6 +238,9 @@ app.get('/api/admin/users', auth, ownerOnly, (req, res) => {
   const users = Object.entries(db.users).map(([email, row]) => safeUser(email, row));
   res.json({ users });
 });
+
+app.get('/api/health', (req, res) => res.json({ ok: true, paymentsEnabled: Boolean(RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) }));
+app.get('/secure', (req, res) => res.sendFile(path.join(__dirname, 'public', 'vectryz-v69-secure.html')));
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
