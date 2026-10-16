@@ -527,12 +527,24 @@
     setTimeout(()=>URL.revokeObjectURL(url),1500);
   }
 
+  async function ensureRazorpay(){
+    if(window.Razorpay) return true;
+    return await new Promise((resolve)=>{
+      const script=document.createElement('script');
+      script.src='https://checkout.razorpay.com/v1/checkout.js';
+      script.async=true;
+      script.onload=()=>resolve(true);
+      script.onerror=()=>resolve(false);
+      document.head.appendChild(script);
+    });
+  }
+
   async function startPayment(){
     $('payError').textContent='';
     if(!user){upgradeModal.hidden=true;authModal.hidden=false;$('authError').textContent='Pro lene ke liye pehle login/register kijiye.';return;}
     if(role()==='owner'){upgradeModal.hidden=true;toastMsg('Owner account already unlimited hai.');return;}
     if(!config.paymentsEnabled){$('payError').textContent='Payment gateway keys abhi configure nahi hain.';return;}
-    if(!window.Razorpay){$('payError').textContent='Razorpay checkout load nahi hua.';return;}
+    if(!(await ensureRazorpay())){$('payError').textContent='Razorpay checkout load nahi hua.';return;}
     try{
       const order=await api('/api/payments/create-order',{method:'POST',body:'{}'});
       const options={
