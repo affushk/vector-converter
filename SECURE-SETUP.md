@@ -47,3 +47,16 @@ After deployment, open:
 4. Register a second test account.
 5. Make a Razorpay test payment and confirm PRO expiry appears.
 6. Only then switch to live Razorpay keys.
+
+
+## Vectorizer.AI official API
+The secure page now supports the official Vectorizer.AI API through the Node backend.
+
+Set these environment variables on the Node host:
+- `VECTORIZER_API_ID`
+- `VECTORIZER_API_SECRET`
+- `VECTORIZER_MODE=test` while integrating
+
+Use `test` first. Test results are watermarked but do not consume production credits. After quality and workflow are confirmed, switch to `production`. In production mode, this app only allows Pro or Owner accounts to call the paid engine.
+
+Never put the API Secret in HTML, frontend JavaScript, GitHub Pages variables exposed to the browser, or a public repository.
