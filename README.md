@@ -19,3 +19,14 @@ https://raw.githack.com/affushk/vector-converter/main/public/v4.html
 
 Previous v3 is still kept in the repository.
 The bundled vector engine is ImageTracerJS 1.2.6 (Unlicense / public domain).
+
+
+## One-click Node deployment
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/affushk/vector-converter)
+
+The Blueprint asks for private values in the Render dashboard. Do not commit API secrets to GitHub.
+
+After deployment, open:
+- `/secure` for the secure Free / Pro / Owner version
+- `/api/health` to verify the Node backend
