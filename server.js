@@ -5,6 +5,16 @@ const crypto = require('crypto');
 const multer = require('multer');
 
 const app = express();
+
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  next();
+});
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data', 'users.json');
 const SESSION_SECRET = process.env.SESSION_SECRET || 'CHANGE_ME_BEFORE_PRODUCTION_' + crypto.createHash('sha256').update(__dirname).digest('hex');
@@ -326,7 +336,7 @@ app.get('/api/admin/users', auth, ownerOnly, (req, res) => {
 app.get('/api/health', (req, res) => res.json({ ok: true, paymentsEnabled: Boolean(RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET), vectorizerEnabled: Boolean(VECTORIZER_API_ID && VECTORIZER_API_SECRET), vectorizerMode: VECTORIZER_MODE }));
 app.get('/secure', (req, res) => res.sendFile(path.join(__dirname, 'public', 'vectryz-v69-secure.html')));
 
-app.get('/', (req, res) => res.redirect('/secure'));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'vectryz-v69.html')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
