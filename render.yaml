@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: vectryz-secure
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OWNER_EMAIL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: PRO_PRICE_PAISE
+        value: "19900"
+      - key: PRO_DAYS
+        value: "30"
+      - key: VECTORIZER_API_ID
+        sync: false
+      - key: VECTORIZER_API_SECRET
+        sync: false
+      - key: VECTORIZER_MODE
+        value: test
