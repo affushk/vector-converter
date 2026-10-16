@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +13,14 @@ const RAZORPAY_KEY_ID = String(process.env.RAZORPAY_KEY_ID || '').trim();
 const RAZORPAY_KEY_SECRET = String(process.env.RAZORPAY_KEY_SECRET || '').trim();
 const PRO_PRICE_PAISE = Math.max(100, Number(process.env.PRO_PRICE_PAISE || 19900));
 const PRO_DAYS = Math.max(1, Number(process.env.PRO_DAYS || 30));
+const VECTORIZER_API_ID = String(process.env.VECTORIZER_API_ID || '').trim();
+const VECTORIZER_API_SECRET = String(process.env.VECTORIZER_API_SECRET || '').trim();
+const VECTORIZER_MODE_RAW = String(process.env.VECTORIZER_MODE || 'test').trim().toLowerCase();
+const VECTORIZER_MODE = ['production','preview','test','test_preview'].includes(VECTORIZER_MODE_RAW) ? VECTORIZER_MODE_RAW : 'test';
+const vectorizerUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024, files: 1 }
+});
 
 function ensureDb() {
   const dir = path.dirname(DATA_FILE);
@@ -136,7 +145,9 @@ app.get('/api/config', (req, res) => {
     proPricePaise: PRO_PRICE_PAISE,
     proDays: PRO_DAYS,
     paymentsEnabled: Boolean(RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET),
-    razorpayKeyId: RAZORPAY_KEY_ID || null
+    razorpayKeyId: RAZORPAY_KEY_ID || null,
+    vectorizerEnabled: Boolean(VECTORIZER_API_ID && VECTORIZER_API_SECRET),
+    vectorizerMode: VECTORIZER_MODE
   });
 });
 
@@ -222,6 +233,70 @@ app.post('/api/payments/verify', express.json(), auth, async (req, res) => {
   }
 });
 
+
+app.post('/api/vectorizer/vectorize', auth, vectorizerUpload.single('image'), async (req, res) => {
+  if (!VECTORIZER_API_ID || !VECTORIZER_API_SECRET) {
+    return res.status(503).json({ error: 'Vectorizer.AI API credentials are not configured yet' });
+  }
+  if (!req.file || !req.file.buffer) return res.status(400).json({ error: 'Image file required' });
+  const allowed = new Set(['image/png','image/jpeg','image/webp','image/gif','image/bmp','image/tiff']);
+  if (!allowed.has(String(req.file.mimetype || '').toLowerCase())) {
+    return res.status(400).json({ error: 'Unsupported image type' });
+  }
+
+  const paidMode = !['test','test_preview'].includes(VECTORIZER_MODE);
+  if (paidMode && !['pro','owner'].includes(req.auth.user.role)) {
+    return res.status(403).json({ error: 'Vectorizer.AI paid mode requires Pro or Owner access' });
+  }
+
+  const format = String(req.query.format || 'svg').toLowerCase();
+  if (!['svg','eps','pdf','dxf','png'].includes(format)) {
+    return res.status(400).json({ error: 'Unsupported output format' });
+  }
+
+  try {
+    const form = new FormData();
+    form.append('image', new Blob([req.file.buffer], { type: req.file.mimetype }), req.file.originalname || 'upload.png');
+    form.append('mode', VECTORIZER_MODE);
+    form.append('output.file_format', format);
+    if (format === 'svg') {
+      form.append('output.svg.version', 'svg_1_1');
+      form.append('output.svg.adobe_compatibility_mode', 'true');
+      form.append('output.svg.fixed_size', 'false');
+    }
+
+    const authHeader = 'Basic ' + Buffer.from(VECTORIZER_API_ID + ':' + VECTORIZER_API_SECRET).toString('base64');
+    const upstream = await fetch('https://api.vectorizer.ai/api/v1/vectorize', {
+      method: 'POST',
+      headers: { authorization: authHeader },
+      body: form
+    });
+
+    const body = Buffer.from(await upstream.arrayBuffer());
+    if (!upstream.ok) {
+      let message = body.toString('utf8').slice(0, 1200) || ('Vectorizer.AI error ' + upstream.status);
+      try {
+        const parsed = JSON.parse(message);
+        message = parsed.error || parsed.message || message;
+      } catch {}
+      return res.status(upstream.status).json({ error: String(message) });
+    }
+
+    res.setHeader('content-type', upstream.headers.get('content-type') || (
+      format === 'svg' ? 'image/svg+xml' :
+      format === 'png' ? 'image/png' :
+      'application/octet-stream'
+    ));
+    res.setHeader('content-disposition', 'inline; filename="vectryz-ai.' + format + '"');
+    const calculated = upstream.headers.get('x-credits-calculated');
+    if (calculated) res.setHeader('x-vectorizer-credits-calculated', calculated);
+    res.setHeader('x-vectorizer-mode', VECTORIZER_MODE);
+    res.send(body);
+  } catch (e) {
+    res.status(502).json({ error: 'Vectorizer.AI service unavailable' });
+  }
+});
+
 app.post('/api/admin/grant-pro', express.json(), auth, ownerOnly, (req, res) => {
   const email = normalizeEmail(req.body?.email);
   const days = Math.max(1, Math.min(3650, Number(req.body?.days || 30)));
@@ -259,4 +334,5 @@ app.listen(PORT, () => {
   if (!OWNER_EMAIL) console.warn('OWNER_EMAIL is not set; no account will receive Owner role.');
   if (!process.env.SESSION_SECRET) console.warn('SESSION_SECRET is not set; configure it before production.');
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) console.warn('Razorpay keys are not set; payments stay disabled.');
+  if (!VECTORIZER_API_ID || !VECTORIZER_API_SECRET) console.warn('Vectorizer.AI credentials are not set; AI vectorization stays disabled.');
 });
