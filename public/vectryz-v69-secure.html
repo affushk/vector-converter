@@ -34,6 +34,17 @@
 .secureToast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(18px);z-index:99999;min-width:260px;max-width:92vw;padding:12px 15px;border-radius:14px;background:#111722;color:#fff;border:1px solid rgba(255,255,255,.12);box-shadow:0 18px 50px rgba(0,0,0,.38);opacity:0;pointer-events:none;transition:.22s}.secureToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:700px){.secureIdentityText span{max-width:72vw}.secureActions{width:100%}.secureActions .secureBtn{flex:1}.ownerGrid{grid-template-columns:1fr 86px}.ownerGrid .secureBtn{grid-column:1/-1}}
 </style>
+
+<style id="vectorizerAiStyles">
+.aiVectorCard{margin-top:18px;border:1px solid rgba(124,92,255,.25);background:linear-gradient(135deg,rgba(124,92,255,.10),rgba(0,212,170,.06))}
+.aiVectorHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.aiBadge{display:inline-flex;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:900;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06)}
+.aiBadge.ready{border-color:rgba(0,212,170,.4);background:rgba(0,212,170,.12)}
+.aiBadge.test{border-color:rgba(255,184,0,.35);background:rgba(255,184,0,.10)}
+.aiVectorActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.aiVectorActions .btn{min-width:170px}
+.aiVectorStatus{margin-top:10px;font-size:12px;opacity:.75;line-height:1.5}
+</style>
 </head>
 <body>
 <div class="app">
@@ -253,7 +264,23 @@
     </section>
   </div>
 
-  <section class="card section resultStudio">
+  
+<section class="card section aiVectorCard" id="aiVectorCard">
+  <div class="aiVectorHead">
+    <div>
+      <h3 style="margin-bottom:4px">⚡ Vectorizer.AI Engine</h3>
+      <div class="sub">Official paid AI vector engine • secure server connection • original Vectryz engine bhi available rahega.</div>
+    </div>
+    <span class="aiBadge" id="aiVectorBadge">NOT CONNECTED</span>
+  </div>
+  <div class="aiVectorActions">
+    <button class="btn primary" id="aiVectorBtn" type="button" disabled>✨ AI Vectorize</button>
+    <button class="btn" id="aiDownloadBtn" type="button" disabled>⬇ AI SVG Download</button>
+  </div>
+  <div class="aiVectorStatus" id="aiVectorStatus">Backend aur Vectorizer.AI credentials check ho rahe hain…</div>
+</section>
+
+<section class="card section resultStudio">
     <div class="resultHead">
       <div>
         <h3>3. Original → Sharp Clean Solid → Shape-Locked Vector</h3>
@@ -370,7 +397,8 @@
   const premiumButtons=['psSvgBtn','epsBtn','topSvg'];
   let token=localStorage.getItem(TOKEN_KEY)||'';
   let user=null;
-  let config={proPricePaise:19900,proDays:30,paymentsEnabled:false,razorpayKeyId:null};
+  let config={proPricePaise:19900,proDays:30,paymentsEnabled:false,razorpayKeyId:null,vectorizerEnabled:false,vectorizerMode:'test'};
+  let aiSvgText='';
   let backendOnline=false;
 
   const $=id=>document.getElementById(id);
@@ -417,6 +445,22 @@
       noteEl.className='secureNote good';
       noteEl.textContent=config.paymentsEnabled?'Secure backend connected • payments enabled':'Secure backend connected • payment keys abhi configure nahi hain';
       $('proPrice').innerHTML='₹'+Math.round(config.proPricePaise/100)+' <small>/ '+config.proDays+' days</small>';
+      const aiBadge=$('aiVectorBadge'), aiBtn=$('aiVectorBtn'), aiStatus=$('aiVectorStatus');
+      if(aiBadge&&aiBtn&&aiStatus){
+        if(config.vectorizerEnabled){
+          aiBadge.textContent=(config.vectorizerMode||'test').toUpperCase();
+          aiBadge.className='aiBadge ready '+((config.vectorizerMode||'').startsWith('test')?'test':'');
+          aiBtn.disabled=false;
+          aiStatus.textContent=(config.vectorizerMode||'').startsWith('test')
+            ? 'Test mode connected — free developer test output me watermark hoga.'
+            : 'Production Vectorizer.AI connected — Pro/Owner users ke liye paid credits use honge.';
+        }else{
+          aiBadge.textContent='NOT CONNECTED';
+          aiBadge.className='aiBadge';
+          aiBtn.disabled=true;
+          aiStatus.textContent='Vectorizer.AI API credentials server par configure karne ke baad button active hoga.';
+        }
+      }
     }catch(e){
       backendOnline=false;
       noteEl.className='secureNote bad';
@@ -437,6 +481,52 @@
       token=d.token;localStorage.setItem(TOKEN_KEY,token);user=d.user;authModal.hidden=true;render();toastMsg(kind==='register'?'Account created':'Login successful');
     }catch(e){$('authError').textContent=e.message;}
   }
+
+  async function runVectorizerAI(){
+    const status=$('aiVectorStatus'), btn=$('aiVectorBtn'), dl=$('aiDownloadBtn');
+    if(!backendOnline){status.textContent='Node backend deploy hone ke baad AI engine chalega.';return;}
+    if(!config.vectorizerEnabled){status.textContent='Vectorizer.AI API credentials configure nahi hain.';return;}
+    if(!user){authModal.hidden=false;$('authError').textContent='AI Vectorizer use karne ke liye pehle login/register kijiye.';return;}
+    if(!String(config.vectorizerMode||'test').startsWith('test') && !unlocked()){
+      upgradeModal.hidden=false;$('payError').textContent='Paid AI Vectorizer production mode Pro/Owner ke liye hai.';return;
+    }
+    const input=$('file');
+    const file=input&&input.files&&input.files[0];
+    if(!file){status.textContent='Pehle image upload kijiye.';toastMsg('Image upload kijiye');return;}
+    const form=new FormData();
+    form.append('image',file,file.name||'upload.png');
+    const old=btn.textContent;
+    btn.disabled=true;dl.disabled=true;status.textContent='Vectorizer.AI processing… original image server ke through secure API par ja rahi hai.';btn.textContent='Processing…';
+    try{
+      const headers={}; if(token) headers.authorization='Bearer '+token;
+      const res=await fetch('/api/vectorizer/vectorize?format=svg',{method:'POST',headers,body:form});
+      if(!res.ok){
+        let msg='AI vectorization failed';
+        try{const d=await res.json();msg=d.error||msg;}catch{msg=await res.text()||msg;}
+        throw new Error(msg);
+      }
+      aiSvgText=await res.text();
+      const preview=$('vectorPreview');
+      if(preview) preview.innerHTML=aiSvgText;
+      dl.disabled=false;
+      const credits=res.headers.get('x-vectorizer-credits-calculated');
+      status.textContent='AI vector ready • mode '+(res.headers.get('x-vectorizer-mode')||config.vectorizerMode)+(credits?(' • production estimate '+credits+' credit'):'');
+      toastMsg('Vectorizer.AI result ready');
+    }catch(e){
+      status.textContent=e.message||'AI vectorization failed';
+    }finally{
+      btn.disabled=!config.vectorizerEnabled;btn.textContent=old;
+    }
+  }
+
+  function downloadAiSvg(){
+    if(!aiSvgText)return;
+    const blob=new Blob([aiSvgText],{type:'image/svg+xml'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='vectryz-ai-vector.svg';document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
+
   async function startPayment(){
     $('payError').textContent='';
     if(!user){upgradeModal.hidden=true;authModal.hidden=false;$('authError').textContent='Pro lene ke liye pehle login/register kijiye.';return;}
@@ -470,6 +560,9 @@
   $('payBtn').addEventListener('click',startPayment);
   authModal.addEventListener('click',e=>{if(e.target===authModal)authModal.hidden=true;});
   upgradeModal.addEventListener('click',e=>{if(e.target===upgradeModal)upgradeModal.hidden=true;});
+
+  $('aiVectorBtn').addEventListener('click',runVectorizerAI);
+  $('aiDownloadBtn').addEventListener('click',downloadAiSvg);
 
   $('grantBtn').addEventListener('click',async()=>{
     try{
