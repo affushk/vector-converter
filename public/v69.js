@@ -847,13 +847,14 @@ async function makeHQTraceDataAsync(imgd){
 async function traceSvgRobust(imgd,options){
  const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
  const firstTimeout=mobile?38000:65000;
+ setLiveProgress(95,'Tracing vector paths','Complex shapes ko background worker me trace kiya ja raha hai…',4,'busy');
  try{
    const out=await traceSvgInWorker(imgd,options,firstTimeout);
    return {svg:out,data:imgd,fallback:false};
  }catch(err){
    if(!/TRACE_TIMEOUT|Background trace failed/i.test(String(err&&err.message||err)))throw err;
-   setLiveProgress(96,'Heavy design detected','Optimized fallback trace chal rahi hai — details preserve karke load kam kiya gaya.',4,'busy');
    status('6/6 Heavy artwork — optimized fallback vector trace…','busy');
+   setLiveProgress(97,'Heavy design detected','Optimized fallback trace chal rahi hai — details preserve karke load kam kiya gaya.',4,'busy');
    await uiYield();
    const long=Math.max(imgd.width,imgd.height),fallbackLong=Math.min(long,mobile?1180:1550);
    const smaller=await resizeTraceDataTo(imgd,fallbackLong);
