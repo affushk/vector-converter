@@ -835,35 +835,68 @@ async function makeHQTraceDataAsync(imgd){
  return resizeTraceDataTo(imgd,target);
 }
 
+async function traceSvgOnServer(imgd,options){
+ const host=location.hostname==='vectryz-secure.onrender.com'?'':'https://vectryz-secure.onrender.com';
+ const endpoint=host+'/api/server-trace';
+ const canvas=canvasFrom(imgd);
+ const blob=await new Promise((resolve,reject)=>{
+   canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG prepare failed')),'image/png');
+ });
+ const form=new FormData();
+ form.append('image',blob,'clean-trace.png');
+ form.append('options',JSON.stringify(options||{}));
+ setLiveProgress(96,'Server vector trace','Phone ka load hata kar Render server par vector paths ban rahe hain…',4,'busy');
+ const ctrl=new AbortController();
+ const timer=setTimeout(()=>ctrl.abort(),70000);
+ try{
+   const res=await fetch(endpoint,{method:'POST',body:form,signal:ctrl.signal});
+   if(!res.ok){
+     let msg='Server trace failed';
+     try{const d=await res.json();msg=d.error||msg}catch{}
+     throw new Error(msg);
+   }
+   const svgText=await res.text();
+   if(!svgText||!/<svg[\s>]/i.test(svgText))throw new Error('Server returned invalid SVG');
+   return svgText;
+ }catch(e){
+   if(e&&e.name==='AbortError')throw new Error('SERVER_TRACE_TIMEOUT');
+   throw e;
+ }finally{clearTimeout(timer)}
+}
+
 async function traceSvgRobust(imgd,options){
  const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
- const firstTimeout=mobile?16000:65000;
- const firstOptions=mobile?{...options,ltres:Math.max(options.ltres||0,.18),qtres:Math.max(options.qtres||0,.34),pathomit:Math.max(options.pathomit||0,1)}:options;
- setLiveProgress(96,'Tracing vector paths','Complex shapes ko background worker me trace kiya ja raha hai…',4,'busy');
+ if(mobile){
+   try{
+     status('6/6 Server-side vector trace — phone load server par shift ho raha hai…','busy');
+     const out=await traceSvgOnServer(imgd,options);
+     return {svg:out,data:imgd,fallback:false,server:true};
+   }catch(serverErr){
+     console.warn('Server trace fallback:',serverErr);
+     status('6/6 Server unavailable — emergency phone-safe trace…','busy');
+     setLiveProgress(98,'Phone-safe fallback','Server response nahi mila, low-memory local trace chal rahi hai…',4,'busy');
+     const long=Math.max(imgd.width,imgd.height);
+     const tiny=await resizeTraceDataTo(imgd,Math.min(long,320));
+     const safe={...options,ltres:Math.max(options.ltres||0,.32),qtres:Math.max(options.qtres||0,.52),pathomit:Math.max(options.pathomit||0,2)};
+     const out=await traceSvgInWorker(tiny,safe,12000);
+     return {svg:out,data:tiny,fallback:true,server:false};
+   }
+ }
+
+ const firstTimeout=65000;
+ setLiveProgress(96,'Tracing vector paths','Desktop background worker me complex shapes trace ho rahe hain…',4,'busy');
  try{
-   const out=await traceSvgInWorker(imgd,firstOptions,firstTimeout);
-   return {svg:out,data:imgd,fallback:false};
+   const out=await traceSvgInWorker(imgd,options,firstTimeout);
+   return {svg:out,data:imgd,fallback:false,server:false};
  }catch(err){
    if(!/TRACE_TIMEOUT|Background trace failed/i.test(String(err&&err.message||err)))throw err;
-   status('6/6 Heavy artwork — optimized fallback vector trace…','busy');
-   setLiveProgress(97,'Heavy design detected','Optimized fallback trace chal rahi hai — details preserve karke load kam kiya gaya.',4,'busy');
-   await uiYield();
-   const long=Math.max(imgd.width,imgd.height),fallbackLong=Math.min(long,mobile?520:1450);
+   status('6/6 Heavy artwork — optimized desktop fallback trace…','busy');
+   setLiveProgress(97,'Heavy design detected','Optimized fallback trace chal rahi hai…',4,'busy');
+   const long=Math.max(imgd.width,imgd.height),fallbackLong=Math.min(long,1450);
    const smaller=await resizeTraceDataTo(imgd,fallbackLong);
    const safe={...options,ltres:Math.max(options.ltres||0,.18),qtres:Math.max(options.qtres||0,.34),pathomit:Math.max(options.pathomit||0,1)};
-   try{
-     const out=await traceSvgInWorker(smaller,safe,mobile?14000:50000);
-     return {svg:out,data:smaller,fallback:true};
-   }catch(err2){
-     if(!mobile||!/TRACE_TIMEOUT|Background trace failed/i.test(String(err2&&err2.message||err2)))throw err2;
-     status('6/6 Very heavy artwork — emergency safe trace…','busy');
-     setLiveProgress(98,'Emergency safe trace','Phone-safe low-memory trace chal rahi hai…',4,'busy');
-     await uiYield();
-     const tiny=await resizeTraceDataTo(imgd,Math.min(long,360));
-     const safer={...safe,ltres:Math.max(safe.ltres||0,.28),qtres:Math.max(safe.qtres||0,.48),pathomit:Math.max(safe.pathomit||0,2)};
-     const out=await traceSvgInWorker(tiny,safer,10000);
-     return {svg:out,data:tiny,fallback:true};
-   }
+   const out=await traceSvgInWorker(smaller,safe,50000);
+   return {svg:out,data:smaller,fallback:true,server:false};
  }
 }
 
