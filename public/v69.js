@@ -851,11 +851,21 @@ async function traceSvgRobust(imgd,options){
    const long=Math.max(imgd.width,imgd.height),fallbackLong=Math.min(long,mobile?760:1450);
    const smaller=await resizeTraceDataTo(imgd,fallbackLong);
    const safe={...options,ltres:Math.max(options.ltres||0,.18),qtres:Math.max(options.qtres||0,.34),pathomit:Math.max(options.pathomit||0,1)};
-   const out=await traceSvgInWorker(smaller,safe,mobile?32000:50000);
-   return {svg:out,data:smaller,fallback:true};
+   try{
+     const out=await traceSvgInWorker(smaller,safe,mobile?22000:50000);
+     return {svg:out,data:smaller,fallback:true};
+   }catch(err2){
+     if(!mobile||!/TRACE_TIMEOUT|Background trace failed/i.test(String(err2&&err2.message||err2)))throw err2;
+     status('6/6 Very heavy artwork — emergency safe trace…','busy');
+     setLiveProgress(98,'Emergency safe trace','Phone-safe low-memory trace chal rahi hai…',4,'busy');
+     await uiYield();
+     const tiny=await resizeTraceDataTo(imgd,Math.min(long,540));
+     const safer={...safe,ltres:Math.max(safe.ltres||0,.28),qtres:Math.max(safe.qtres||0,.48),pathomit:Math.max(safe.pathomit||0,2)};
+     const out=await traceSvgInWorker(tiny,safer,18000);
+     return {svg:out,data:tiny,fallback:true};
+   }
  }
 }
-
 
 async function processAll(){
  if(!srcImg||processBusy)return;processBusy=true;
