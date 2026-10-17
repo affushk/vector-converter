@@ -785,34 +785,33 @@ function stats(ms){const m=svg.match(/<path\b/g);$('#pathCount').textContent=m?m
 
 function uiYield(){return new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)))}
 
-function traceSvgInWorker(imgd,options){
+function traceSvgInWorker(imgd,options,timeoutMs){
  return new Promise((resolve,reject)=>{
-   let worker;
-   try{worker=new Worker('./trace69.worker.js?v=69a')}catch(err){reject(err);return}
+   let worker,finished=false,timer=null;
+   const done=(err,value)=>{
+     if(finished)return;finished=true;
+     if(timer)clearTimeout(timer);
+     try{worker&&worker.terminate()}catch{}
+     if(err)reject(err);else resolve(value);
+   };
+   try{worker=new Worker('./trace69.worker.js?v=69b')}catch(err){done(err);return}
    const id=Date.now()+Math.random();
+   const limit=Math.max(12000,timeoutMs||50000);
+   timer=setTimeout(()=>done(new Error('TRACE_TIMEOUT')),limit);
    worker.onmessage=e=>{
      const d=e.data||{};if(d.id!==id)return;
-     try{worker.terminate()}catch{}
-     if(d.ok)resolve(d.svg);else reject(new Error(d.error||'Background trace failed'));
+     if(d.ok)done(null,d.svg);else done(new Error(d.error||'Background trace failed'));
    };
-   worker.onerror=e=>{
-     try{worker.terminate()}catch{}
-     reject(new Error((e&&e.message)||'Background trace failed'));
-   };
+   worker.onerror=e=>done(new Error((e&&e.message)||'Background trace failed'));
    const copy=new Uint8ClampedArray(imgd.data);
    worker.postMessage({id,width:imgd.width,height:imgd.height,data:copy.buffer,options},[copy.buffer]);
  });
 }
 
-async function makeHQTraceDataAsync(imgd){
- if(!$('#penFix')||!$('#penFix').checked)return imgd;
+async function resizeTraceDataTo(imgd,targetLong){
  const long=Math.max(imgd.width,imgd.height);
- const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
- // Already-large artwork is traced at its cleaned resolution. Small art gets a modest upscale.
- const cap=mobile?1700:2200,mult=mobile?2.0:2.35;
- const target=Math.min(cap,Math.max(long,Math.round(long*mult)));
- if(target<=long+8)return imgd;
- const sc=target/long,w=Math.max(1,Math.round(imgd.width*sc)),h=Math.max(1,Math.round(imgd.height*sc));
+ if(!targetLong||Math.abs(targetLong-long)<8)return imgd;
+ const sc=targetLong/long,w=Math.max(1,Math.round(imgd.width*sc)),h=Math.max(1,Math.round(imgd.height*sc));
  const src=canvasFrom(imgd),c=document.createElement('canvas');c.width=w;c.height=h;
  const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(src,0,0,w,h);
  const d=g.getImageData(0,0,w,h),a=d.data,row=w*4;
@@ -827,9 +826,41 @@ async function makeHQTraceDataAsync(imgd){
      }
      const q=palette[bi];a[i]=q.r;a[i+1]=q.g;a[i+2]=q.b;a[i+3]=255;
    }
-   if((y&47)===0)await uiYield();
+   if((y&31)===0)await uiYield();
  }
  return d;
+}
+
+async function makeHQTraceDataAsync(imgd){
+ if(!$('#penFix')||!$('#penFix').checked)return imgd;
+ const long=Math.max(imgd.width,imgd.height);
+ const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
+ // v6.9b: tracing has its own safe cap. The clean/PNG artwork stays high-res,
+ // but complex mobile designs no longer send a 2400px supersampled bitmap to ImageTracer.
+ const cap=mobile?1600:2200,mult=mobile?1.45:1.8;
+ let target=Math.min(cap,Math.max(Math.min(long,cap),Math.round(Math.min(long,cap)*mult)));
+ if(long>cap)target=cap;
+ if(long<=cap)target=Math.min(cap,Math.max(long,Math.round(long*mult)));
+ return resizeTraceDataTo(imgd,target);
+}
+
+async function traceSvgRobust(imgd,options){
+ const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
+ const firstTimeout=mobile?38000:65000;
+ try{
+   const out=await traceSvgInWorker(imgd,options,firstTimeout);
+   return {svg:out,data:imgd,fallback:false};
+ }catch(err){
+   if(!/TRACE_TIMEOUT|Background trace failed/i.test(String(err&&err.message||err)))throw err;
+   setLiveProgress(96,'Heavy design detected','Optimized fallback trace chal rahi hai — details preserve karke load kam kiya gaya.',4,'busy');
+   status('6/6 Heavy artwork — optimized fallback vector trace…','busy');
+   await uiYield();
+   const long=Math.max(imgd.width,imgd.height),fallbackLong=Math.min(long,mobile?1180:1550);
+   const smaller=await resizeTraceDataTo(imgd,fallbackLong);
+   const safe={...options,ltres:Math.max(options.ltres||0,.18),qtres:Math.max(options.qtres||0,.34),pathomit:Math.max(options.pathomit||0,1)};
+   const out=await traceSvgInWorker(smaller,safe,mobile?32000:50000);
+   return {svg:out,data:smaller,fallback:true};
+ }
 }
 
 
@@ -863,9 +894,9 @@ async function processAll(){
    await uiYield();
    const traceData=await makeHQTraceDataAsync(imgd);
    await uiYield();
-   const rawSvg=await traceSvgInWorker(traceData,traceOptions());
-   svg=enhanceSvg(rawSvg);
-   svg=enhanceVectorGraphSvg(svg,traceData);
+   const traced=await traceSvgRobust(traceData,traceOptions());
+   svg=enhanceSvg(traced.svg);
+   svg=enhanceVectorGraphSvg(svg,traced.data);
    await uiYield();
    $('#vectorPreview').innerHTML=svg;setButtons(true);stats(performance.now()-start);
    status('Done — Textile Pro Auto ready: '+palette.length+' solid colours, Safe Shape Lock + background worker trace.','good')
