@@ -824,14 +824,19 @@ async function resizeTraceDataTo(imgd,targetLong){
 
 async function makeHQTraceDataAsync(imgd){
  if(!$('#penFix')||!$('#penFix').checked)return imgd;
- const long=Math.max(imgd.width,imgd.height);
  const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
- // v6.9d: vector tracing resolution is intentionally lower than preview/export resolution.
- // This keeps complex textile artwork reliable on phones while preserving the high-res clean image.
- const cap=mobile?720:1900;
+ // v6.9i: mobile now uses Render server-side tracing.
+ // Keep the cleaned image at full working resolution so the server receives
+ // enough edge detail; the server applies its own quality-controlled resize.
+ if(mobile){
+   setLiveProgress(95,'Preparing server trace','High-resolution clean artwork server ko bhejne ke liye ready hai…',4,'busy');
+   await uiYield();
+   return imgd;
+ }
+ const long=Math.max(imgd.width,imgd.height);
+ const cap=1900;
  const target=Math.min(long,cap);
  if(target>=long-8)return imgd;
- setLiveProgress(95,'Optimizing heavy artwork','Mobile-safe trace bitmap prepare ho raha hai…',4,'busy');
  return resizeTraceDataTo(imgd,target);
 }
 
@@ -858,6 +863,9 @@ async function traceSvgOnServer(imgd,options){
    }
    const svgText=await res.text();
    if(!svgText||!/<svg[\s>]/i.test(svgText))throw new Error('Server returned invalid SVG');
+   const quality=res.headers.get('x-trace-quality')||'SERVER';
+   const tw=res.headers.get('x-trace-width'),th=res.headers.get('x-trace-height');
+   setLiveProgress(99,'Server vector ready',quality+' trace'+(tw&&th?(' • '+tw+'×'+th):'')+' — final SVG polish ho raha hai…',4,'busy');
    return svgText;
  }catch(e){
    if(e&&e.name==='AbortError')throw new Error('SERVER_TRACE_TIMEOUT');
