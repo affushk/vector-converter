@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const multer = require('multer');
 const sharp = require('sharp');
 const ImageTracer = require('./public/imagetracer_v1.2.6.js');
+const { Worker } = require('worker_threads');
 
 const app = express();
 
@@ -137,6 +138,48 @@ function authLimit(req, res, next) {
 }
 function razorpayAuth() {
   return 'Basic ' + Buffer.from(RAZORPAY_KEY_ID + ':' + RAZORPAY_KEY_SECRET).toString('base64');
+}
+
+function traceInNodeWorker(imgd, options, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const id = Date.now() + Math.random();
+    const worker = new Worker(path.join(__dirname, 'server-trace.worker.js'));
+    let finished = false;
+    const finish = (err, value) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      try { worker.terminate(); } catch {}
+      if (err) reject(err); else resolve(value);
+    };
+    const timer = setTimeout(() => finish(new Error('SERVER_TRACE_TIMEOUT')), Math.max(5000, timeoutMs || 15000));
+    worker.on('message', (d) => {
+      if (!d || d.id !== id) return;
+      if (d.ok) finish(null, d.svg);
+      else finish(new Error(d.error || 'Server trace failed'));
+    });
+    worker.on('error', (err) => finish(err));
+    const copy = new Uint8ClampedArray(imgd.data);
+    worker.postMessage({ id, width: imgd.width, height: imgd.height, data: copy.buffer, options }, [copy.buffer]);
+  });
+}
+
+async function decodeForTrace(buffer, targetLong) {
+  const meta = await sharp(buffer).metadata();
+  const ow = meta.width || 1, oh = meta.height || 1, long = Math.max(ow, oh);
+  const target = Math.max(64, Math.min(long, targetLong || long));
+  const sc = target / long;
+  const w = Math.max(1, Math.round(ow * sc)), h = Math.max(1, Math.round(oh * sc));
+  const out = await sharp(buffer)
+    .resize(w, h, { kernel: 'nearest', fit: 'fill' })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return {
+    width: out.info.width,
+    height: out.info.height,
+    data: new Uint8ClampedArray(out.data)
+  };
 }
 
 app.post('/api/register', express.json(), authLimit, (req, res) => {
@@ -312,28 +355,32 @@ app.post('/api/server-trace', serverTraceLimit, serverTraceUpload.single('image'
       safe.numberofcolors=safe.pal.length||safe.numberofcolors;
     }
 
-    const {data,info}=await sharp(req.file.buffer)
-      .ensureAlpha()
-      .raw()
-      .toBuffer({resolveWithObject:true});
+    const attempts=[
+      { long: 820, timeout: 18000, pathomit: Math.max(safe.pathomit,1), lt:.16, qt:.30 },
+      { long: 560, timeout: 14000, pathomit: Math.max(safe.pathomit,2), lt:.24, qt:.42 },
+      { long: 380, timeout: 10000, pathomit: Math.max(safe.pathomit,3), lt:.34, qt:.58 }
+    ];
 
-    const maxLong=1400;
-    let rgba=data,w=info.width,h=info.height;
-    const long=Math.max(w,h);
-    if(long>maxLong){
-      const sc=maxLong/long,nw=Math.max(1,Math.round(w*sc)),nh=Math.max(1,Math.round(h*sc));
-      const resized=await sharp(req.file.buffer).resize(nw,nh,{kernel:'nearest'}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
-      rgba=resized.data;w=resized.info.width;h=resized.info.height;
+    let lastErr=null;
+    for(let i=0;i<attempts.length;i++){
+      const a=attempts[i];
+      try{
+        const imgd=await decodeForTrace(req.file.buffer,a.long);
+        const opts={...safe,pathomit:a.pathomit,ltres:Math.max(safe.ltres,a.lt),qtres:Math.max(safe.qtres,a.qt)};
+        const started=Date.now();
+        const svg=await traceInNodeWorker(imgd,opts,a.timeout);
+        res.setHeader('content-type','image/svg+xml; charset=utf-8');
+        res.setHeader('x-trace-ms',String(Date.now()-started));
+        res.setHeader('x-trace-width',String(imgd.width));
+        res.setHeader('x-trace-height',String(imgd.height));
+        res.setHeader('x-trace-attempt',String(i+1));
+        return res.send(svg);
+      }catch(err){
+        lastErr=err;
+        console.warn('server trace attempt failed',i+1,err&&err.message);
+      }
     }
-
-    const imgd={width:w,height:h,data:new Uint8ClampedArray(rgba)};
-    const started=Date.now();
-    const svg=ImageTracer.imagedataToSVG(imgd,safe);
-    res.setHeader('content-type','image/svg+xml; charset=utf-8');
-    res.setHeader('x-trace-ms',String(Date.now()-started));
-    res.setHeader('x-trace-width',String(w));
-    res.setHeader('x-trace-height',String(h));
-    res.send(svg);
+    return res.status(504).json({error:'Server trace timed out on this artwork after safe fallbacks'});
   }catch(e){
     console.error('server-trace',e);
     res.status(500).json({error:'Server trace failed: '+(e.message||String(e))});
