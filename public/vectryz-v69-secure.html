@@ -7,8 +7,8 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Vectryz by Altaf v6.9 — PC Studio</title>
-<link rel="stylesheet" href="./v69.css?v=69a">
+<title>Vectryz by Altaf v7.0 — Pen-Lock Solid Studio</title>
+<link rel="stylesheet" href="./v70.css?v=70">
 <meta name="application-name" content="Vectryz by Altaf">
 <meta name="apple-mobile-web-app-title" content="Vectryz by Altaf">
 <meta name="mobile-web-app-capable" content="yes">
@@ -149,7 +149,7 @@
   <section class="hero">
     <h2><span>Smart Textile</span> Vector Studio</h2>
     <p>JPG / PNG se clean solid artwork, shape-locked vector, live compare, colour separation aur Photoshop-ready SVG/EPS — sab ek premium textile workflow me.</p>
-    <span class="badge">Textile Pro Auto</span><span class="badge">Photoshop Ready</span><span class="badge">Live Vector Lens</span><span class="badge">Exact Solid RGB</span>
+    <span class="badge">Pen-Lock Solid</span><span class="badge">Textile Pro Auto</span><span class="badge">Photoshop Ready</span><span class="badge">Live Vector Lens</span><span class="badge">Exact Solid RGB</span>
   </section>
 
   <section class="processHud card" id="processHud" aria-live="polite">
@@ -202,7 +202,24 @@
 
     <section class="card">
       <h3>2. Vector Engine</h3>
-      <div class="sub">Default profile: <b>Textile Pro Auto</b> — manual setting change ki zarurat minimum rakhi gayi hai.</div>
+      <div class="sub">Default profile: <b>Pen-Lock Solid</b> — JPG ka contour lock karke closed Bézier shapes aur exact solid RGB fill banaya jayega.</div>
+
+      <div class="engineModeBox" id="engineModeBox">
+        <div class="engineModeHead">
+          <div><b>✒ Pen-Lock Solid Engine</b><span id="engineModeNote">Outline lock → Bézier Pen curves → closed colour shapes → exact solid RGB fill.</span></div>
+          <span class="penLockBadge">MAGIC WAND READY</span>
+        </div>
+        <div class="engineModeSwitch">
+          <button class="engineModeBtn active" type="button" data-engine-mode="penlock">✒ Pen-Lock Solid</button>
+          <button class="engineModeBtn" type="button" data-engine-mode="fast">⚡ Fast Auto</button>
+        </div>
+        <div class="penPipeline">
+          <div class="penStage"><i>①</i>Outline detect</div>
+          <div class="penStage"><i>②</i>Pen curve fit</div>
+          <div class="penStage"><i>③</i>Closed shapes</div>
+          <div class="penStage"><i>④</i>Solid fill</div>
+        </div>
+      </div>
 
       <div class="presetbar" id="presets">
         <button class="preset active" data-preset="printer">Textile Pro Auto</button>
@@ -283,10 +300,15 @@
 <section class="card section resultStudio">
     <div class="resultHead">
       <div>
-        <h3>3. Original → Sharp Clean Solid → Shape-Locked Vector</h3>
-        <span>PC par large preview ke liye Focus Vector use karein.</span>
+        <h3>3. Original → Clean Solid → Pen-Lock Closed Vector</h3>
+        <span>Solid Fill aur Pen Outline dono preview available hain.</span>
       </div>
       <button class="btn focusBtn" id="focusVectorBtn" disabled>⛶ Focus Vector</button>
+    </div>
+
+    <div class="vectorViewTools">
+      <button class="btn active" id="solidViewBtn" type="button" disabled>🎨 Solid Fill View</button>
+      <button class="btn" id="outlineViewBtn" type="button" disabled>✒ Pen Outline View</button>
     </div>
 
     <div class="liveCompareBar">
@@ -382,10 +404,10 @@
     <div class="focusCanvas" id="focusCanvas"></div>
   </div>
 
-  <div class="footer">Vectryz by Altaf • PC Studio v6.9</div>
+  <div class="footer">Vectryz by Altaf • Pen-Lock Solid Studio v7.0</div>
 </div>
 <script src="./imagetracer_v1.2.6.js"></script>
-<script src="./v69.js?v=69i"></script>
+<script src="./v70.js?v=70"></script>
 <script src="./separation69.js?v=69a"></script>
 <script src="./livecompare69.js?v=69a"></script>
 <script src="./motion69.js?v=69a"></script>
