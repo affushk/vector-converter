@@ -3,6 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const multer = require('multer');
+const sharp = require('sharp');
+const ImageTracer = require('./public/imagetracer_v1.2.6.js');
 
 const app = express();
 
@@ -31,6 +33,21 @@ const vectorizerUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024, files: 1 }
 });
+const serverTraceUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 12 * 1024 * 1024, files: 1 }
+});
+const serverTraceHits = new Map();
+function serverTraceLimit(req,res,next){
+  const key=req.ip||req.socket.remoteAddress||'unknown';
+  const now=Date.now();
+  const item=serverTraceHits.get(key)||{start:now,count:0};
+  if(now-item.start>60*60*1000){item.start=now;item.count=0}
+  item.count++;
+  serverTraceHits.set(key,item);
+  if(item.count>30)return res.status(429).json({error:'Server trace limit reached. Try again later.'});
+  next();
+}
 
 function ensureDb() {
   const dir = path.dirname(DATA_FILE);
@@ -243,6 +260,85 @@ app.post('/api/payments/verify', express.json(), auth, async (req, res) => {
   }
 });
 
+
+
+app.options('/api/server-trace', (req,res) => {
+  const origin=String(req.headers.origin||'');
+  if (/^https:\/\/raw\.githack\.com$/i.test(origin) || /^https:\/\/vectryz-secure\.onrender\.com$/i.test(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary','Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers','Content-Type');
+  return res.sendStatus(204);
+});
+
+app.post('/api/server-trace', serverTraceLimit, serverTraceUpload.single('image'), async (req,res) => {
+  const origin=String(req.headers.origin||'');
+  if (/^https:\/\/raw\.githack\.com$/i.test(origin) || /^https:\/\/vectryz-secure\.onrender\.com$/i.test(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary','Origin');
+  }
+  if(!req.file?.buffer)return res.status(400).json({error:'PNG/JPG image required'});
+  try{
+    let options={};
+    try{options=JSON.parse(String(req.body?.options||'{}'))}catch{}
+    const safe={
+      colorsampling:0,
+      numberofcolors:Math.max(2,Math.min(32,Number(options.numberofcolors)||8)),
+      colorquantcycles:1,
+      mincolorratio:0,
+      layering:Number(options.layering)===1?1:0,
+      pathomit:Math.max(0,Math.min(8,Number(options.pathomit)||0)),
+      rightangleenhance:false,
+      strokewidth:0,
+      linefilter:false,
+      scale:1,
+      roundcoords:Math.max(1,Math.min(5,Number(options.roundcoords)||3)),
+      viewbox:true,
+      desc:false,
+      blurradius:0,
+      blurdelta:20,
+      ltres:Math.max(.05,Math.min(3,Number(options.ltres)||.2)),
+      qtres:Math.max(.05,Math.min(3,Number(options.qtres)||.35))
+    };
+    if(Array.isArray(options.pal)){
+      safe.pal=options.pal.slice(0,32).map(c=>({
+        r:Math.max(0,Math.min(255,Number(c.r)||0)),
+        g:Math.max(0,Math.min(255,Number(c.g)||0)),
+        b:Math.max(0,Math.min(255,Number(c.b)||0)),
+        a:255
+      }));
+      safe.numberofcolors=safe.pal.length||safe.numberofcolors;
+    }
+
+    const {data,info}=await sharp(req.file.buffer)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({resolveWithObject:true});
+
+    const maxLong=1400;
+    let rgba=data,w=info.width,h=info.height;
+    const long=Math.max(w,h);
+    if(long>maxLong){
+      const sc=maxLong/long,nw=Math.max(1,Math.round(w*sc)),nh=Math.max(1,Math.round(h*sc));
+      const resized=await sharp(req.file.buffer).resize(nw,nh,{kernel:'nearest'}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+      rgba=resized.data;w=resized.info.width;h=resized.info.height;
+    }
+
+    const imgd={width:w,height:h,data:new Uint8ClampedArray(rgba)};
+    const started=Date.now();
+    const svg=ImageTracer.imagedataToSVG(imgd,safe);
+    res.setHeader('content-type','image/svg+xml; charset=utf-8');
+    res.setHeader('x-trace-ms',String(Date.now()-started));
+    res.setHeader('x-trace-width',String(w));
+    res.setHeader('x-trace-height',String(h));
+    res.send(svg);
+  }catch(e){
+    console.error('server-trace',e);
+    res.status(500).json({error:'Server trace failed: '+(e.message||String(e))});
+  }
+});
 
 app.post('/api/vectorizer/vectorize', auth, vectorizerUpload.single('image'), async (req, res) => {
   if (!VECTORIZER_API_ID || !VECTORIZER_API_SECRET) {
