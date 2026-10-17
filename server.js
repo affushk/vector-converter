@@ -164,22 +164,34 @@ function traceInNodeWorker(imgd, options, timeoutMs) {
   });
 }
 
-async function decodeForTrace(buffer, targetLong) {
+async function decodeForTrace(buffer, targetLong, palette) {
   const meta = await sharp(buffer).metadata();
   const ow = meta.width || 1, oh = meta.height || 1, long = Math.max(ow, oh);
   const target = Math.max(64, Math.min(long, targetLong || long));
   const sc = target / long;
   const w = Math.max(1, Math.round(ow * sc)), h = Math.max(1, Math.round(oh * sc));
   const out = await sharp(buffer)
-    .resize(w, h, { kernel: 'nearest', fit: 'fill' })
+    .resize(w, h, { kernel: 'lanczos3', fit: 'fill' })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
-  return {
-    width: out.info.width,
-    height: out.info.height,
-    data: new Uint8ClampedArray(out.data)
-  };
+
+  const arr = new Uint8ClampedArray(out.data);
+  if (Array.isArray(palette) && palette.length) {
+    for (let i = 0; i < arr.length; i += 4) {
+      if (arr[i + 3] < 16) { arr[i + 3] = 0; continue; }
+      let best = 0, bd = Infinity;
+      for (let k = 0; k < palette.length; k++) {
+        const q = palette[k];
+        const dr = arr[i] - q.r, dg = arr[i + 1] - q.g, db = arr[i + 2] - q.b;
+        const d = dr * dr * 1.15 + dg * dg * 1.35 + db * db * .9;
+        if (d < bd) { bd = d; best = k; }
+      }
+      const q = palette[best];
+      arr[i] = q.r; arr[i + 1] = q.g; arr[i + 2] = q.b; arr[i + 3] = 255;
+    }
+  }
+  return { width: out.info.width, height: out.info.height, data: arr };
 }
 
 app.post('/api/register', express.json(), authLimit, (req, res) => {
@@ -356,16 +368,16 @@ app.post('/api/server-trace', serverTraceLimit, serverTraceUpload.single('image'
     }
 
     const attempts=[
-      { long: 820, timeout: 18000, pathomit: Math.max(safe.pathomit,1), lt:.16, qt:.30 },
-      { long: 560, timeout: 14000, pathomit: Math.max(safe.pathomit,2), lt:.24, qt:.42 },
-      { long: 380, timeout: 10000, pathomit: Math.max(safe.pathomit,3), lt:.34, qt:.58 }
+      { long: 1100, timeout: 30000, pathomit: Math.max(safe.pathomit,1), lt:.22, qt:.42, quality:'HQ' },
+      { long: 900, timeout: 24000, pathomit: Math.max(safe.pathomit,1), lt:.30, qt:.55, quality:'HIGH' },
+      { long: 720, timeout: 18000, pathomit: Math.max(safe.pathomit,2), lt:.42, qt:.72, quality:'SAFE' }
     ];
 
     let lastErr=null;
     for(let i=0;i<attempts.length;i++){
       const a=attempts[i];
       try{
-        const imgd=await decodeForTrace(req.file.buffer,a.long);
+        const imgd=await decodeForTrace(req.file.buffer,a.long,safe.pal||[]);
         const opts={...safe,pathomit:a.pathomit,ltres:Math.max(safe.ltres,a.lt),qtres:Math.max(safe.qtres,a.qt)};
         const started=Date.now();
         const svg=await traceInNodeWorker(imgd,opts,a.timeout);
@@ -374,13 +386,14 @@ app.post('/api/server-trace', serverTraceLimit, serverTraceUpload.single('image'
         res.setHeader('x-trace-width',String(imgd.width));
         res.setHeader('x-trace-height',String(imgd.height));
         res.setHeader('x-trace-attempt',String(i+1));
+        res.setHeader('x-trace-quality',a.quality);
         return res.send(svg);
       }catch(err){
         lastErr=err;
         console.warn('server trace attempt failed',i+1,err&&err.message);
       }
     }
-    return res.status(504).json({error:'Server trace timed out on this artwork after safe fallbacks'});
+    return res.status(504).json({error:'High-quality server trace could not finish for this artwork. Low-quality emergency output was rejected.'});
   }catch(e){
     console.error('server-trace',e);
     res.status(500).json({error:'Server trace failed: '+(e.message||String(e))});
