@@ -812,51 +812,43 @@ async function resizeTraceDataTo(imgd,targetLong){
  const long=Math.max(imgd.width,imgd.height);
  if(!targetLong||Math.abs(targetLong-long)<8)return imgd;
  const sc=targetLong/long,w=Math.max(1,Math.round(imgd.width*sc)),h=Math.max(1,Math.round(imgd.height*sc));
- const src=canvasFrom(imgd),c=document.createElement('canvas');c.width=w;c.height=h;
- const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(src,0,0,w,h);
- const d=g.getImageData(0,0,w,h),a=d.data,row=w*4;
- for(let y=0;y<h;y++){
-   const end=(y+1)*row;
-   for(let i=y*row;i<end;i+=4){
-     if(a[i+3]<16){a[i+3]=0;continue}
-     let bi=0,bd=Infinity;
-     for(let k=0;k<palette.length;k++){
-       const q=palette[k],dr=a[i]-q.r,dg=a[i+1]-q.g,db=a[i+2]-q.b,dd=dr*dr*1.15+dg*dg*1.35+db*db*.9;
-       if(dd<bd){bd=dd;bi=k}
-     }
-     const q=palette[bi];a[i]=q.r;a[i+1]=q.g;a[i+2]=q.b;a[i+3]=255;
-   }
-   if((y&31)===0)await uiYield();
- }
- return d;
+ const src=canvasFrom(imgd),cnv=document.createElement('canvas');cnv.width=w;cnv.height=h;
+ const g=cnv.getContext('2d',{willReadFrequently:true});
+ // Input is already quantized to flat palette colours. Nearest-neighbour keeps those exact
+ // colours without the old O(pixels × palette) resnap loop that stalled phones at 94%.
+ g.imageSmoothingEnabled=false;
+ g.drawImage(src,0,0,w,h);
+ await uiYield();
+ return g.getImageData(0,0,w,h);
 }
 
 async function makeHQTraceDataAsync(imgd){
  if(!$('#penFix')||!$('#penFix').checked)return imgd;
  const long=Math.max(imgd.width,imgd.height);
  const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
- // v6.9b: tracing has its own safe cap. The clean/PNG artwork stays high-res,
- // but complex mobile designs no longer send a 2400px supersampled bitmap to ImageTracer.
- const cap=mobile?1600:2200,mult=mobile?1.45:1.8;
- let target=Math.min(cap,Math.max(Math.min(long,cap),Math.round(Math.min(long,cap)*mult)));
- if(long>cap)target=cap;
- if(long<=cap)target=Math.min(cap,Math.max(long,Math.round(long*mult)));
+ // v6.9d: vector tracing resolution is intentionally lower than preview/export resolution.
+ // This keeps complex textile artwork reliable on phones while preserving the high-res clean image.
+ const cap=mobile?1050:1900;
+ const target=Math.min(long,cap);
+ if(target>=long-8)return imgd;
+ setLiveProgress(95,'Optimizing heavy artwork','Mobile-safe trace bitmap prepare ho raha hai…',4,'busy');
  return resizeTraceDataTo(imgd,target);
 }
 
 async function traceSvgRobust(imgd,options){
  const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
- const firstTimeout=mobile?38000:65000;
- setLiveProgress(95,'Tracing vector paths','Complex shapes ko background worker me trace kiya ja raha hai…',4,'busy');
+ const firstTimeout=mobile?26000:65000;
+ const firstOptions=mobile?{...options,ltres:Math.max(options.ltres||0,.13),qtres:Math.max(options.qtres||0,.28)}:options;
+ setLiveProgress(96,'Tracing vector paths','Complex shapes ko background worker me trace kiya ja raha hai…',4,'busy');
  try{
-   const out=await traceSvgInWorker(imgd,options,firstTimeout);
+   const out=await traceSvgInWorker(imgd,firstOptions,firstTimeout);
    return {svg:out,data:imgd,fallback:false};
  }catch(err){
    if(!/TRACE_TIMEOUT|Background trace failed/i.test(String(err&&err.message||err)))throw err;
    status('6/6 Heavy artwork — optimized fallback vector trace…','busy');
    setLiveProgress(97,'Heavy design detected','Optimized fallback trace chal rahi hai — details preserve karke load kam kiya gaya.',4,'busy');
    await uiYield();
-   const long=Math.max(imgd.width,imgd.height),fallbackLong=Math.min(long,mobile?1180:1550);
+   const long=Math.max(imgd.width,imgd.height),fallbackLong=Math.min(long,mobile?760:1450);
    const smaller=await resizeTraceDataTo(imgd,fallbackLong);
    const safe={...options,ltres:Math.max(options.ltres||0,.18),qtres:Math.max(options.qtres||0,.34),pathomit:Math.max(options.pathomit||0,1)};
    const out=await traceSvgInWorker(smaller,safe,mobile?32000:50000);
