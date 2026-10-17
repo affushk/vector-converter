@@ -828,7 +828,7 @@ async function makeHQTraceDataAsync(imgd){
  const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
  // v6.9d: vector tracing resolution is intentionally lower than preview/export resolution.
  // This keeps complex textile artwork reliable on phones while preserving the high-res clean image.
- const cap=mobile?1050:1900;
+ const cap=mobile?720:1900;
  const target=Math.min(long,cap);
  if(target>=long-8)return imgd;
  setLiveProgress(95,'Optimizing heavy artwork','Mobile-safe trace bitmap prepare ho raha hai…',4,'busy');
@@ -837,8 +837,8 @@ async function makeHQTraceDataAsync(imgd){
 
 async function traceSvgRobust(imgd,options){
  const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
- const firstTimeout=mobile?26000:65000;
- const firstOptions=mobile?{...options,ltres:Math.max(options.ltres||0,.13),qtres:Math.max(options.qtres||0,.28)}:options;
+ const firstTimeout=mobile?16000:65000;
+ const firstOptions=mobile?{...options,ltres:Math.max(options.ltres||0,.18),qtres:Math.max(options.qtres||0,.34),pathomit:Math.max(options.pathomit||0,1)}:options;
  setLiveProgress(96,'Tracing vector paths','Complex shapes ko background worker me trace kiya ja raha hai…',4,'busy');
  try{
    const out=await traceSvgInWorker(imgd,firstOptions,firstTimeout);
@@ -848,20 +848,20 @@ async function traceSvgRobust(imgd,options){
    status('6/6 Heavy artwork — optimized fallback vector trace…','busy');
    setLiveProgress(97,'Heavy design detected','Optimized fallback trace chal rahi hai — details preserve karke load kam kiya gaya.',4,'busy');
    await uiYield();
-   const long=Math.max(imgd.width,imgd.height),fallbackLong=Math.min(long,mobile?760:1450);
+   const long=Math.max(imgd.width,imgd.height),fallbackLong=Math.min(long,mobile?520:1450);
    const smaller=await resizeTraceDataTo(imgd,fallbackLong);
    const safe={...options,ltres:Math.max(options.ltres||0,.18),qtres:Math.max(options.qtres||0,.34),pathomit:Math.max(options.pathomit||0,1)};
    try{
-     const out=await traceSvgInWorker(smaller,safe,mobile?22000:50000);
+     const out=await traceSvgInWorker(smaller,safe,mobile?14000:50000);
      return {svg:out,data:smaller,fallback:true};
    }catch(err2){
      if(!mobile||!/TRACE_TIMEOUT|Background trace failed/i.test(String(err2&&err2.message||err2)))throw err2;
      status('6/6 Very heavy artwork — emergency safe trace…','busy');
      setLiveProgress(98,'Emergency safe trace','Phone-safe low-memory trace chal rahi hai…',4,'busy');
      await uiYield();
-     const tiny=await resizeTraceDataTo(imgd,Math.min(long,540));
+     const tiny=await resizeTraceDataTo(imgd,Math.min(long,360));
      const safer={...safe,ltres:Math.max(safe.ltres||0,.28),qtres:Math.max(safe.qtres||0,.48),pathomit:Math.max(safe.pathomit||0,2)};
-     const out=await traceSvgInWorker(tiny,safer,18000);
+     const out=await traceSvgInWorker(tiny,safer,10000);
      return {svg:out,data:tiny,fallback:true};
    }
  }
