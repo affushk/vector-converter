@@ -847,7 +847,8 @@ async function traceSvgOnServer(imgd,options){
  form.append('options',JSON.stringify(options||{}));
  setLiveProgress(96,'Server vector trace','Phone ka load hata kar Render server par vector paths ban rahe hain…',4,'busy');
  const ctrl=new AbortController();
- const timer=setTimeout(()=>ctrl.abort(),70000);
+ const wakeMsg=setTimeout(()=>setLiveProgress(96,'Server waking up','Free Render server sleep se wake ho raha hai — pehli baar thoda time lag sakta hai…',4,'busy'),8000);
+ const timer=setTimeout(()=>ctrl.abort(),120000);
  try{
    const res=await fetch(endpoint,{method:'POST',body:form,signal:ctrl.signal});
    if(!res.ok){
@@ -861,7 +862,7 @@ async function traceSvgOnServer(imgd,options){
  }catch(e){
    if(e&&e.name==='AbortError')throw new Error('SERVER_TRACE_TIMEOUT');
    throw e;
- }finally{clearTimeout(timer)}
+ }finally{clearTimeout(wakeMsg);clearTimeout(timer)}
 }
 
 async function traceSvgRobust(imgd,options){
