@@ -1045,13 +1045,29 @@ $('#outlineViewBtn')?.addEventListener('click',()=>{if(!svg)return;vectorPreview
 $('#solidViewBtn')?.addEventListener('click',()=>{if(!svg)return;vectorPreviewMode='solid';renderVectorPreviewMode()});
 
 
-function rebuild(){
- if(!cleanData||!indexMap)return;const d=new ImageData(new Uint8ClampedArray(cleanData.data),cleanData.width,cleanData.height);
- for(let p=0,i=0;p<indexMap.length;p++,i+=4){const q=indexMap[p];if(q===65535){d.data[i+3]=0;continue}const c=palette[q]||palette[0];d.data[i]=c.r;d.data[i+1]=c.g;d.data[i+2]=c.b}
- cleanData=d;cleanCanvas=canvasFrom(d);showSharpCleanPreview();const traceData=d;svg=ImageTracer.imagedataToSVG(traceData,traceOptions());svg=enhanceVectorGraphSvg(svg,traceData);svg=finalizePenLockSvg(svg);vectorPreviewMode='solid';
- const fastMobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
- if(!fastMobile)/* v6.9 Safe Shape Lock: no global SVG refit */
- renderVectorPreviewMode();renderPalette();stats(0);status('Palette changes + Pen-Lock Solid apply ho gaya.','good')
+async function rebuild(){
+ if(!cleanData||!indexMap||processBusy)return;
+ processBusy=true;
+ const btn=$('#rebuild');if(btn){btn.disabled=true;btn.textContent='Rebuilding…'}
+ try{
+   const d=new ImageData(new Uint8ClampedArray(cleanData.data),cleanData.width,cleanData.height);
+   for(let p=0,i=0;p<indexMap.length;p++,i+=4){
+     const q=indexMap[p];if(q===65535){d.data[i+3]=0;continue}
+     const col=palette[q]||palette[0];d.data[i]=col.r;d.data[i+1]=col.g;d.data[i+2]=col.b;d.data[i+3]=255;
+   }
+   cleanData=d;cleanCanvas=canvasFrom(d);showSharpCleanPreview();
+   status('6/6 Palette rebuild — closed Pen-Lock paths update ho rahe hain…','busy');
+   const traced=await traceSvgRobust(d,traceOptions());
+   svg=enhanceVectorGraphSvg(traced.svg,traced.data);
+   svg=finalizePenLockSvg(svg);
+   vectorPreviewMode='solid';
+   renderVectorPreviewMode();renderPalette();stats(0);
+   status('Done — Palette changes + Pen-Lock Solid rebuild ready.','good');
+ }catch(e){
+   console.error(e);status('Error: rebuild failed — '+(e.message||e),'bad');
+ }finally{
+   processBusy=false;if(btn){btn.disabled=false;btn.textContent='Rebuild SVG'}
+ }
 }
 $('#rebuild').onclick=rebuild;
 $('#merge').onclick=()=>{
