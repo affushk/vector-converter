@@ -22,7 +22,7 @@ function liveProgressFromStatus(t,k=''){
  if(/^(Image loaded|Pasted)/.test(t))return setLiveProgress(30,'Image ready','Auto Vectorize start ho raha hai…',0,'');
 }
 function status(t,k=''){const e=$('#status');e.textContent=t;e.className='status'+(k?' '+k:'');liveProgressFromStatus(t,k)}
-function setButtons(on){['#svgBtn','#psSvgBtn','#epsBtn','#pngBtn','#copyBtn','#topSvg','#rebuild','#merge','#focusVectorBtn'].forEach(s=>{const el=$(s);if(el)el.disabled=!on})}
+function setButtons(on){['#svgBtn','#psSvgBtn','#epsBtn','#pngBtn','#copyBtn','#topSvg','#rebuild','#merge','#focusVectorBtn','#outlineViewBtn','#solidViewBtn'].forEach(s=>{const el=$(s);if(el)el.disabled=!on})}
 function hex(c){return '#'+[c.r,c.g,c.b].map(v=>Math.round(v).toString(16).padStart(2,'0')).join('')}
 function parseHex(h){return{r:parseInt(h.slice(1,3),16),g:parseInt(h.slice(3,5),16),b:parseInt(h.slice(5,7),16),a:255}}
 function d2(a,b){const dr=a.r-b.r,dg=a.g-b.g,db=a.b-b.b;return dr*dr*1.15+dg*dg*1.35+db*db*.9}
@@ -35,7 +35,7 @@ const presetCfg={
  detail:{levels:36,noise:12,solid:22,curve:99,quality:'3200',colors:'16'},
  scan:{levels:84,noise:65,solid:70,curve:82,quality:'2400',colors:'auto'}
 };
-function applyPreset(name){preset=name;const c=presetCfg[name];$('#levels').value=c.levels;$('#noise').value=c.noise;$('#solid').value=c.solid;$('#curve').value=c.curve;$('#quality').value=c.quality;$('#colors').value=c.colors;$('#modeStat').textContent={printer:'Textile Pro Auto',textile:'Textile Solid',sharp:'Sharp Motif',detail:'Fine Detail',scan:'Scan Rescue'}[name];document.querySelectorAll('.preset').forEach(b=>b.classList.toggle('active',b.dataset.preset===name));sync()}
+function applyPreset(name){preset=name;const c=presetCfg[name];$('#levels').value=c.levels;$('#noise').value=c.noise;$('#solid').value=c.solid;$('#curve').value=c.curve;$('#quality').value=c.quality;$('#colors').value=c.colors;$('#modeStat').textContent=engineMode==='penlock'?'Pen-Lock Solid':({printer:'Textile Pro Auto',textile:'Textile Solid',sharp:'Sharp Motif',detail:'Fine Detail',scan:'Scan Rescue'}[name]);document.querySelectorAll('.preset').forEach(b=>b.classList.toggle('active',b.dataset.preset===name));sync()}
 function sync(){[['levels','levelsV'],['noise','noiseV'],['solid','solidV'],['curve','curveV'],['bgTol','bgTolV'],['penStrength','penStrengthV']].forEach(([a,b])=>$('#'+b).textContent=$('#'+a).value);$('#colorStat').textContent=$('#colors').value==='auto'?'Auto':$('#colors').value}
 
 function setEngineMode(mode){
