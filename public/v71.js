@@ -383,6 +383,10 @@ function sourceCanvas(){
  const max=+$('#quality').value||2400,w=srcImg.naturalWidth||srcImg.width,h=srcImg.naturalHeight||srcImg.height,long=Math.max(w,h);
  let target=$('#supersample').checked?Math.min(max,long*2):Math.min(max,long);
  if(preset==='detail'&&$('#supersample').checked)target=Math.min(4000,max);
+ const mobile=window.matchMedia&&window.matchMedia('(max-width: 820px)').matches;
+ // Auto-CS6 works on a shape-analysis raster; SVG output remains resolution-independent.
+ // Capping the phone working raster avoids RAM stalls during Magic-Wand region flood fill.
+ if(engineMode==='penlock'&&mobile)target=Math.min(target,1600);
  const sc=target/long,c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*sc));c.height=Math.max(1,Math.round(h*sc));
  const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(srcImg,0,0,c.width,c.height);return c
 }
